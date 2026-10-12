@@ -152,27 +152,43 @@
 	grid-template-columns: repeat(8, 1fr);
 }
 
+/* Weeknummers: subtiel oranje, los van datumtekst in het raster */
+.date-line-calendar-host .week-numbers {
+	--date-line-week-fg: hsl(28, 55%, 48%);
+	--date-line-week-fg-strong: hsl(28, 62%, 42%);
+}
+
+.theme-dark .date-line-calendar-host .week-numbers {
+	--date-line-week-fg: hsl(28, 45%, 62%);
+	--date-line-week-fg-strong: hsl(28, 55%, 68%);
+}
+
+.date-line-calendar-host .week-numbers .dow {
+	color: var(--date-line-week-fg);
+	opacity: 0.85;
+}
+
 .date-line-calendar-host .week-numbers .week {
 	cursor: pointer;
 	border-radius: 4px;
+	color: var(--date-line-week-fg);
+	font-weight: 500;
 }
 
 .date-line-calendar-host .week-numbers .week:hover {
 	background-color: var(--background-modifier-hover);
-	color: var(--text-accent);
+	color: var(--date-line-week-fg-strong);
 }
 
-/* Geselecteerde week (klik / notitie-week): accenttekst, geen vlak */
 .date-line-calendar-host .week-numbers .week.date-line-week-picked {
 	background-color: transparent !important;
-	color: var(--text-accent) !important;
+	color: var(--date-line-week-fg-strong) !important;
 	font-weight: 700;
 }
 
-/* Huidige kalenderweek (week waarin vandaag valt) */
 .date-line-calendar-host .week-numbers .week.date-line-week-current {
 	background-color: transparent !important;
-	color: var(--text-accent) !important;
+	color: var(--date-line-week-fg-strong) !important;
 	font-weight: 600;
 }
 
