@@ -40,7 +40,7 @@ export class DateLineCMPlugin implements PluginValue {
 	) {
 		view.scrollDOM.addEventListener(
 			"scroll",
-			() => this.repositionPicker(),
+			() => this.scheduleRepositionPicker(),
 			{ signal: this.scrollAbort.signal },
 		);
 		this.refreshMatches(view);
@@ -98,16 +98,21 @@ export class DateLineCMPlugin implements PluginValue {
 		return false;
 	}
 
-	repositionPicker(): void {
+	scheduleRepositionPicker(): void {
 		if (!this.datepicker?.isOpened) return;
-		const pos = this.view.coordsAtPos(this.datepicker.cursorPosition);
-		if (pos) {
-			this.datepicker.updatePosition({
-				top: pos.top,
-				left: pos.left,
-				bottom: pos.bottom,
-			});
-		}
+		const picker = this.datepicker;
+		const anchor = picker.cursorPosition;
+		this.view.requestMeasure({
+			read: (v) => v.coordsAtPos(anchor),
+			write: (pos) => {
+				if (!pos || !picker.isOpened) return;
+				picker.updatePosition({
+					top: pos.top,
+					left: pos.left,
+					bottom: pos.bottom,
+				});
+			},
+		});
 	}
 
 	formatEditedValue(match: DateMatch, pickerResult: string): string {
@@ -138,7 +143,7 @@ export class DateLineCMPlugin implements PluginValue {
 			read: (v) => v.coordsAtPos(match.from),
 			write: (pos) => {
 				if (!pos) return;
-				this.datepicker?.respectSettingAndClose();
+				this.datepicker?.close();
 				this.datepicker = new DateLinePicker(this.getSettings);
 				this.datepicker.open(pos, match, (result) => {
 					const newValue = this.formatEditedValue(match, result);
@@ -164,13 +169,13 @@ export class DateLineCMPlugin implements PluginValue {
 			update.heightChanged ||
 			this.performingReplace
 		) {
-			this.repositionPicker();
+			queueMicrotask(() => this.scheduleRepositionPicker());
 			this.refreshMatches(update.view);
 		}
 	}
 
 	destroy(): void {
-		this.datepicker?.respectSettingAndClose();
+		this.datepicker?.close();
 		this.scrollAbort.abort();
 	}
 }

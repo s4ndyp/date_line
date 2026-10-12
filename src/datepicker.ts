@@ -1,7 +1,7 @@
 import { moment, Notice, Platform, setIcon } from "obsidian";
 import { Datepicker } from "vanillajs-datepicker";
 import type { DatepickerOptions } from "vanillajs-datepicker/Datepicker";
-import "./calendarLocales";
+import { ensureCalendarLocales } from "./calendarLocales";
 import type { DateLineSettings } from "./types";
 import type { DateMatch } from "./types";
 
@@ -20,6 +20,7 @@ export class DateLinePicker {
 	private timeInput: HTMLInputElement | null = null;
 	private calendarHost!: HTMLDivElement;
 	private datepicker: Datepicker | null = null;
+	private inputAbort = new AbortController();
 	private selectedIsoDate = "";
 	public datetime!: DateMatch;
 	public cursorPosition = 0;
@@ -62,13 +63,15 @@ export class DateLinePicker {
 	}
 
 	close(): void {
+		this.isOpened = false;
+		this.inputAbort.abort();
+		this.inputAbort = new AbortController();
 		this.datepicker?.destroy();
 		this.datepicker = null;
 		const doc = getActiveDocument();
 		Array.from(doc.getElementsByClassName("date-line-picker")).forEach((el) =>
 			el.remove(),
 		);
-		this.isOpened = false;
 	}
 
 	respectSettingAndClose(): void {
@@ -123,6 +126,7 @@ export class DateLinePicker {
 
 	private mountVanillaCalendar(initial: moment.Moment): void {
 		const settings = this.getSettings();
+		ensureCalendarLocales(settings.calendarLanguage);
 		this.calendarHost = this.pickerContainer.createDiv(
 			"date-line-calendar-host",
 		);
@@ -158,26 +162,15 @@ export class DateLinePicker {
 		}
 
 		this.pickerInput.addEventListener(
-			"hide",
-			(ev: Event & { detail?: { viewDate?: Date } }) => {
-				if (!this.isOpened) return;
-				window.setTimeout(() => {
-					if (!this.isOpened) return;
-					this.datepicker?.show();
-					const viewDate = ev.detail?.viewDate;
-					if (viewDate) {
-						this.datepicker?.setFocusedDate(viewDate);
-					}
-				}, 0);
+			"changeDate",
+			() => {
+				const picked = this.datepicker?.getDate() as Date | undefined;
+				if (picked) {
+					this.selectedIsoDate = moment(picked).format("YYYY-MM-DD");
+				}
 			},
+			{ signal: this.inputAbort.signal },
 		);
-
-		this.pickerInput.addEventListener("changeDate", () => {
-			const picked = this.datepicker?.getDate() as Date | undefined;
-			if (picked) {
-				this.selectedIsoDate = moment(picked).format("YYYY-MM-DD");
-			}
-		});
 
 		if (initial.isValid()) {
 			this.datepicker.setDate(initial.toDate());

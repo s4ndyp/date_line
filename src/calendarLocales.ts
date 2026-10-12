@@ -1,7 +1,8 @@
 import { Datepicker } from "vanillajs-datepicker";
 import nlPack from "vanillajs-datepicker/locales/nl";
 
-/** vanillajs vereist titleFormat op locale (DaysView.switchLabelFormat). */
+const TITLE_FORMAT = "MM y";
+
 const enLocale = {
 	en: {
 		days: [
@@ -45,7 +46,7 @@ const enLocale = {
 		],
 		today: "Today",
 		clear: "Clear",
-		titleFormat: "MM y",
+		titleFormat: TITLE_FORMAT,
 		weekStart: 0,
 		format: "yyyy-mm-dd",
 	},
@@ -54,13 +55,48 @@ const enLocale = {
 const nlLocale = {
 	nl: {
 		...nlPack.nl,
-		titleFormat: "MM y",
+		titleFormat: TITLE_FORMAT,
 	},
 };
 
-Object.assign(Datepicker.locales, enLocale, nlLocale);
+function patchTitleFormat(code: string): void {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const locales = Datepicker.locales as Record<string, any>;
+	const loc = locales[code];
+	if (loc && !loc.titleFormat) {
+		loc.titleFormat = TITLE_FORMAT;
+	}
+}
+
+/** Registreer locales (plugin load). */
+export function registerCalendarLocales(): void {
+	Object.assign(Datepicker.locales, enLocale, nlLocale);
+	patchTitleFormat("en");
+	patchTitleFormat("nl");
+}
+
+/**
+ * vanillajs DaysView vereist locale.titleFormat; na destroy/reload kan die verdwijnen.
+ * Roep vóór elke Datepicker-constructie aan.
+ */
+export function ensureCalendarLocales(language: string): void {
+	registerCalendarLocales();
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const locales = Datepicker.locales as Record<string, any>;
+	const fallback = locales.en;
+	for (const code of new Set(["en", "nl", language])) {
+		if (!code) continue;
+		if (!locales[code]) {
+			locales[code] = { ...fallback, titleFormat: TITLE_FORMAT };
+		} else if (!locales[code].titleFormat) {
+			locales[code].titleFormat = TITLE_FORMAT;
+		}
+	}
+}
 
 export const CALENDAR_LANGUAGES: Record<string, string> = {
 	en: "English",
 	nl: "Nederlands",
 };
+
+registerCalendarLocales();
