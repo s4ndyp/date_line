@@ -124,20 +124,28 @@
 	color: var(--text-accent) !important;
 }
 
-.date-line-calendar-host .datepicker-cell.selected,
-.date-line-calendar-host .datepicker-cell.selected:hover {
+.date-line-calendar-host .datepicker-cell.selected:not(.today),
+.date-line-calendar-host .datepicker-cell.selected:not(.today):hover {
 	background: var(--interactive-accent);
 	color: var(--text-on-accent);
 }
 
-/* Vandaag: alleen accenttekst, geen mint/vol achtergrond uit vanillajs-default */
-.date-line-calendar-host .datepicker-cell.today:not(.selected),
-.date-line-calendar-host .datepicker-cell.today.focused:not(.selected) {
+/* Actuele datum (vandaag): accenttekst, geen mint/vol achtergrond — ook als geselecteerd */
+.date-line-calendar-host .datepicker-cell.today,
+.date-line-calendar-host .datepicker-cell.today.focused,
+.date-line-calendar-host .datepicker-cell.today.selected,
+.date-line-calendar-host .datepicker-cell.today.selected:hover,
+.date-line-calendar-host .datepicker-cell.today:not(.disabled):hover {
 	background: transparent !important;
 	background-color: transparent !important;
 	box-shadow: none !important;
 	color: var(--text-accent) !important;
 	font-weight: 600;
+}
+
+.date-line-calendar-host .datepicker-cell.today.selected,
+.date-line-calendar-host .datepicker-cell.today.selected:hover {
+	font-weight: 700;
 }
 
 .date-line-calendar-host.has-week-numbers .datepicker-grid {
