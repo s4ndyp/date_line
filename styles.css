@@ -1,0 +1,45 @@
+.date-line-calendar-btn {
+	display: inline-flex;
+	align-items: center;
+	vertical-align: middle;
+	cursor: pointer;
+	--icon-size: 14px;
+	margin-right: 4px;
+	opacity: 0.75;
+}
+
+.date-line-calendar-btn:hover {
+	opacity: 1;
+	color: var(--text-accent);
+}
+
+.date-line-picker {
+	position: absolute;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 6px 8px;
+	background-color: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	box-shadow: var(--shadow-s);
+	z-index: 100;
+}
+
+.date-line-picker-input {
+	font-family: var(--font-interface);
+	font-size: var(--font-ui-small);
+}
+
+.date-line-picker-btn {
+	--icon-size: 14px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 4px;
+	border-radius: 4px;
+}
+
+.date-line-picker-btn:hover {
+	background-color: var(--background-modifier-hover);
+}
