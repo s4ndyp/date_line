@@ -2,6 +2,12 @@ import { moment, Notice, Platform, setIcon } from "obsidian";
 import { Datepicker } from "vanillajs-datepicker";
 import type { DatepickerOptions } from "vanillajs-datepicker/Datepicker";
 import { ensureCalendarLocales } from "./calendarLocales";
+import {
+	formatDatetimeNoteValue,
+	formatPickerDisplayValue,
+	pickWeekFormatForOutput,
+	type PickerSelectionKind,
+} from "./pickerOutput";
 import { parseDateOrWeek } from "./weekParse";
 import type { DateLineSettings } from "./types";
 import type { DateMatch } from "./types";
@@ -10,6 +16,25 @@ declare const activeDocument: Document;
 
 function getActiveDocument(): Document {
 	return typeof activeDocument !== "undefined" ? activeDocument : document;
+}
+
+function anchorDayForWeekRow(
+	calendarHost: HTMLElement,
+	rowIndex: number,
+): moment.Moment | null {
+	const grid = calendarHost.querySelector(".days .datepicker-grid");
+	if (!grid || rowIndex < 0) return null;
+	const cell = grid.children[rowIndex * 7] as HTMLElement | undefined;
+	const ts = cell?.dataset?.date;
+	if (!ts) return null;
+	const m = moment(Number(ts));
+	return m.isValid() ? m : null;
+}
+
+function clearWeekRowHighlight(calendarHost: HTMLElement): void {
+	calendarHost
+		.querySelectorAll(".week-numbers .week.date-line-week-picked")
+		.forEach((el) => el.classList.remove("date-line-week-picked"));
 }
 
 export class DateLinePicker {
@@ -23,6 +48,9 @@ export class DateLinePicker {
 	private datepicker: Datepicker | null = null;
 	private inputAbort = new AbortController();
 	private selectedIsoDate = "";
+	private selectionKind: PickerSelectionKind = "date";
+	private weekAnchor: moment.Moment | null = null;
+	private initializingCalendar = false;
 	public datetime!: DateMatch;
 	public cursorPosition = 0;
 	public closedByButton = false;
@@ -69,6 +97,7 @@ export class DateLinePicker {
 		this.inputAbort = new AbortController();
 		this.datepicker?.destroy();
 		this.datepicker = null;
+		this.weekAnchor = null;
 		const doc = getActiveDocument();
 		Array.from(doc.getElementsByClassName("date-line-picker")).forEach((el) =>
 			el.remove(),
@@ -85,57 +114,159 @@ export class DateLinePicker {
 		this.close();
 	}
 
-	private buildSubmitValue(): string {
+	private initialSelectionKind(): PickerSelectionKind {
+		return this.datetime.format.type === "WEEK" ? "week" : "date";
+	}
+
+	private effectiveWeekNumbers(settings: DateLineSettings): number {
+		if (settings.weekNumbers !== 0) return settings.weekNumbers;
+		return pickWeekFormatForOutput(settings) ? 1 : 0;
+	}
+
+	private pickedCalendarMoment(): moment.Moment | null {
+		if (this.selectionKind === "week" && this.weekAnchor) {
+			return this.weekAnchor.clone();
+		}
+		const picked = this.datepicker?.getDate() as Date | undefined;
+		if (picked) return moment(picked);
+		if (this.selectedIsoDate) return moment(this.selectedIsoDate, "YYYY-MM-DD");
+		return null;
+	}
+
+	private buildFinalNoteText(): string {
 		const { datetime } = this;
 		if (datetime.format.type === "TIME") {
 			return this.pickerInput?.value ?? "";
 		}
 
-		const picked = this.datepicker?.getDate() as Date | undefined;
-		const datePart = picked
-			? moment(picked).format("YYYY-MM-DD")
-			: this.selectedIsoDate;
-
 		if (datetime.format.type === "DATETIME") {
+			const picked = this.datepicker?.getDate() as Date | undefined;
+			const datePart = picked
+				? moment(picked).format("YYYY-MM-DD")
+				: this.selectedIsoDate;
 			const timePart = this.timeInput?.value || "00:00";
 			if (!datePart) return "";
-			return `${datePart}T${timePart}`;
+			return formatDatetimeNoteValue(
+				`${datePart}T${timePart}`,
+				this.getSettings(),
+				datetime,
+			);
 		}
 
-		return datePart;
+		const parsed = this.pickedCalendarMoment();
+		if (!parsed?.isValid()) return "";
+
+		const display = formatPickerDisplayValue(
+			this.selectionKind,
+			parsed,
+			this.getSettings(),
+			datetime,
+		);
+		return display ?? "";
 	}
 
 	submit(): void {
 		if (this.submitted || DateLinePicker.escPressed || !this.isOpened) return;
 		this.submitted = true;
-		let submitValue = this.buildSubmitValue();
-		if (submitValue.length === 0) return;
+		let noteText = this.buildFinalNoteText();
+		if (noteText.length === 0) return;
 
 		if (this.datetime.format.type === "TIME" && this.pickerInput) {
-			submitValue =
-				moment().format("YYYY-MM-DD") + "T" + this.pickerInput.value;
+			noteText = this.pickerInput.value;
 		}
 
-		const formatted = moment(submitValue).format(
-			this.datetime.format.formatToUser,
-		);
-		if (formatted === this.datetime.value) {
+		if (noteText === this.datetime.value) {
 			return;
 		}
-		setTimeout(() => this.onSubmit(submitValue), 0);
+		setTimeout(() => this.onSubmit(noteText), 0);
+	}
+
+	private onWeekNumberClick(weekEl: HTMLElement): void {
+		const settings = this.getSettings();
+		if (!pickWeekFormatForOutput(settings)) return;
+
+		const weeks = weekEl.parentElement;
+		if (!weeks) return;
+		const rowIndex = Array.from(weeks.children).indexOf(weekEl);
+		const anchor = anchorDayForWeekRow(this.calendarHost, rowIndex);
+		if (!anchor) return;
+
+		this.selectionKind = "week";
+		this.weekAnchor = anchor;
+		clearWeekRowHighlight(this.calendarHost);
+		weekEl.classList.add("date-line-week-picked");
+
+		if (settings.autoApplyEdits) {
+			this.submitAndClose();
+		}
+	}
+
+	private onCalendarDayPicked(): void {
+		this.selectionKind = "date";
+		this.weekAnchor = null;
+		clearWeekRowHighlight(this.calendarHost);
+	}
+
+	private bindCalendarInteraction(): void {
+		const settings = this.getSettings();
+		const canPickWeek = !!pickWeekFormatForOutput(settings);
+
+		this.calendarHost.addEventListener(
+			"click",
+			(ev) => {
+				const weekEl = (ev.target as HTMLElement).closest(
+					".week-numbers .week",
+				) as HTMLElement | null;
+				if (weekEl && canPickWeek) {
+					ev.preventDefault();
+					ev.stopPropagation();
+					this.onWeekNumberClick(weekEl);
+					return;
+				}
+
+				const cell = (ev.target as HTMLElement).closest(
+					".datepicker-cell.day",
+				) as HTMLElement | null;
+				if (!cell || cell.classList.contains("disabled")) return;
+
+				this.onCalendarDayPicked();
+			},
+			{ signal: this.inputAbort.signal, capture: true },
+		);
+
+		this.pickerInput?.addEventListener(
+			"changeDate",
+			() => {
+				const picked = this.datepicker?.getDate() as Date | undefined;
+				if (picked) {
+					this.selectedIsoDate = moment(picked).format("YYYY-MM-DD");
+				}
+				if (this.initializingCalendar) return;
+				if (settings.autoApplyEdits) {
+					this.submitAndClose();
+				}
+			},
+			{ signal: this.inputAbort.signal },
+		);
 	}
 
 	private mountVanillaCalendar(initial: moment.Moment): void {
 		const settings = this.getSettings();
+		this.selectionKind = this.initialSelectionKind();
+		this.weekAnchor =
+			this.selectionKind === "week" && initial.isValid()
+				? initial.clone().startOf("isoWeek")
+				: null;
+
 		ensureCalendarLocales(settings.calendarLanguage);
 		this.calendarHost = this.pickerContainer.createDiv(
 			"date-line-calendar-host",
 		);
-		if (settings.weekNumbers !== 0) {
+		const weekNumbers = this.effectiveWeekNumbers(settings);
+		if (weekNumbers !== 0) {
 			this.calendarHost.addClass("has-week-numbers");
 		}
 
-		// Zelfde patroon als Date Inserter: input + show(), niet inline in de editor
 		this.pickerInput = this.calendarHost.createEl("input", {
 			type: "text",
 			cls: "date-line-datepicker-input",
@@ -145,9 +276,8 @@ export class DateLinePicker {
 		const options: DatepickerOptions = {
 			language: settings.calendarLanguage,
 			weekStart: settings.weekStart,
-			weekNumbers: settings.weekNumbers,
+			weekNumbers,
 			todayHighlight: settings.todayHighlight,
-			// Intern altijd ISO; output blijft het formaat van de notitie (moment bij submit)
 			format: "yyyy-mm-dd",
 			container: this.calendarHost,
 			autohide: false,
@@ -162,23 +292,39 @@ export class DateLinePicker {
 			return;
 		}
 
-		this.pickerInput.addEventListener(
-			"changeDate",
-			() => {
-				const picked = this.datepicker?.getDate() as Date | undefined;
-				if (picked) {
-					this.selectedIsoDate = moment(picked).format("YYYY-MM-DD");
-				}
-			},
-			{ signal: this.inputAbort.signal },
-		);
+		this.bindCalendarInteraction();
 
+		this.initializingCalendar = true;
 		if (initial.isValid()) {
 			this.datepicker.setDate(initial.toDate());
 			this.selectedIsoDate = initial.format("YYYY-MM-DD");
 		}
 
-		window.setTimeout(() => this.datepicker?.show(), 0);
+		window.setTimeout(() => {
+			this.datepicker?.show();
+			if (this.selectionKind === "week" && this.weekAnchor) {
+				window.setTimeout(() => this.highlightWeekForAnchor(this.weekAnchor!), 0);
+			}
+			this.initializingCalendar = false;
+		}, 0);
+	}
+
+	private highlightWeekForAnchor(anchor: moment.Moment): void {
+		const iso = anchor.clone().startOf("isoWeek").valueOf();
+		const grid = this.calendarHost.querySelector(".days .datepicker-grid");
+		if (!grid) return;
+		for (let row = 0; row < 6; row++) {
+			const cell = grid.children[row * 7] as HTMLElement | undefined;
+			const ts = cell?.dataset?.date;
+			if (!ts) continue;
+			if (moment(Number(ts)).startOf("isoWeek").valueOf() === iso) {
+				const weekEl = this.calendarHost.querySelectorAll(
+					".week-numbers .week",
+				)[row];
+				weekEl?.classList.add("date-line-week-picked");
+				break;
+			}
+		}
 	}
 
 	open(
@@ -203,10 +349,7 @@ export class DateLinePicker {
 		const parsed =
 			datetime.format.type === "TIME"
 				? moment(datetime.value, ["hh:mm A", "HH:mm"], true)
-				: parseDateOrWeek(
-						datetime.value,
-						datetime.format.formatToUser,
-					);
+				: parseDateOrWeek(datetime.value, datetime.format.formatToUser);
 
 		if (datetime.format.type === "TIME") {
 			this.pickerInput = this.pickerContainer.createEl("input");
@@ -245,7 +388,7 @@ export class DateLinePicker {
 
 		const buttonAbort = new AbortController();
 		const acceptHandler = () => {
-			if (!this.buildSubmitValue()) {
+			if (!this.buildFinalNoteText()) {
 				new Notice("Voer een geldige datum in");
 			} else {
 				DateLinePicker.enterPressed = true;

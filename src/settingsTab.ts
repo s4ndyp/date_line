@@ -57,7 +57,7 @@ export class DateLineSettingTab extends PluginSettingTab {
 			"Weeknotatie",
 			"customWeek",
 			"[wk]WW/YYYY",
-			"Weeknummers (WW of W) zonder dag; opent de kalender op die ISO-week.",
+			"Weeknummers (WW of W) zonder dag. In de picker kun je op een weeknummer klikken om naar weeknotatie te wisselen.",
 		);
 
 		new Setting(containerEl)
