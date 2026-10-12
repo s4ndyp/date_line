@@ -16,14 +16,70 @@
 .date-line-picker {
 	position: absolute;
 	display: flex;
-	align-items: center;
-	gap: 4px;
-	padding: 6px 8px;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 6px;
+	padding: 8px;
 	background-color: var(--background-primary);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 8px;
 	box-shadow: var(--shadow-s);
 	z-index: 100;
+	max-width: min(100%, 22rem);
+}
+
+.date-line-picker-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 4px;
+}
+
+.date-line-calendar-host {
+	position: relative;
+}
+
+.date-line-calendar-host .date-line-datepicker-input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.date-line-calendar-host .datepicker {
+	--datepicker-color: var(--text-normal);
+	--datepicker-bg: var(--background-primary);
+	--datepicker-border: var(--background-modifier-border);
+	font-size: var(--font-ui-small);
+}
+
+.date-line-calendar-host .datepicker-picker {
+	background: var(--background-primary);
+	border-color: var(--background-modifier-border);
+}
+
+.date-line-calendar-host .datepicker-controls .button,
+.date-line-calendar-host .datepicker-view .dow,
+.date-line-calendar-host .datepicker-cell {
+	color: var(--text-normal);
+}
+
+.date-line-calendar-host .datepicker-cell.selected,
+.date-line-calendar-host .datepicker-cell.selected:hover {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.date-line-calendar-host .datepicker-cell.today:not(.selected) {
+	box-shadow: inset 0 0 0 1px var(--interactive-accent);
+}
+
+.date-line-calendar-host.has-week-numbers .datepicker-grid {
+	grid-template-columns: repeat(8, 1fr);
+}
+
+.date-line-time-input {
+	align-self: flex-start;
 }
 
 .date-line-picker-input {

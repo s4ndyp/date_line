@@ -10,12 +10,14 @@ import {
 	DEFAULT_SETTINGS,
 } from "./src/settings";
 import type { DateLineSettings } from "./src/types";
+import datepickerCss from "vanillajs-datepicker/css/datepicker.min.css";
 
 export default class DateLinePlugin extends Plugin {
 	settings: DateLineSettings = DEFAULT_SETTINGS;
 
 	async onload(): Promise<void> {
 		await this.loadSettings();
+		this.injectDatepickerStyles();
 		setDateLineSettingsGetter(() => this.settings);
 		applyHighlightStyles(this.settings);
 
@@ -44,6 +46,16 @@ export default class DateLinePlugin extends Plugin {
 
 	onunload(): void {
 		document.getElementById("date-line-dynamic-styles")?.remove();
+		document.getElementById("date-line-vanilla-datepicker-css")?.remove();
+	}
+
+	private injectDatepickerStyles(): void {
+		const id = "date-line-vanilla-datepicker-css";
+		if (document.getElementById(id)) return;
+		const el = document.createElement("style");
+		el.id = id;
+		el.textContent = datepickerCss as string;
+		document.head.appendChild(el);
 	}
 
 	async loadSettings(): Promise<void> {

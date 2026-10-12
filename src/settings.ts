@@ -15,9 +15,12 @@ export const DEFAULT_SETTINGS: DateLineSettings = {
 	},
 	ignoreCodeblocks: true,
 	autoApplyEdits: true,
-	openCalendarImmediately: true,
 	overrideFormatOnEdit: false,
 	preferredDateFormat: "YYYY-MM-DD",
+	weekNumbers: 1,
+	weekStart: 1,
+	calendarLanguage: "nl",
+	todayHighlight: true,
 };
 
 export function applyHighlightStyles(settings: DateLineSettings): void {

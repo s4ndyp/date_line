@@ -6,7 +6,26 @@ import {
 } from "obsidian";
 import { DATE_PATTERNS } from "./patterns";
 import { TIME_PATTERN_OPTION } from "./formats";
+import { CALENDAR_LANGUAGES } from "./calendarLocales";
 import type DateLinePlugin from "../main";
+
+const WEEK_START_OPTIONS: Record<string, string> = {
+	"0": "Zondag",
+	"1": "Maandag",
+	"2": "Dinsdag",
+	"3": "Woensdag",
+	"4": "Donderdag",
+	"5": "Vrijdag",
+	"6": "Zaterdag",
+};
+
+const WEEK_NUMBER_OPTIONS: Record<string, string> = {
+	"0": "Uit",
+	"1": "ISO 8601",
+	"2": "Westers (traditioneel)",
+	"3": "Midden-Oosten",
+	"4": "Automatisch (via weekstart)",
+};
 
 export class DateLineSettingTab extends PluginSettingTab {
 	plugin: DateLinePlugin;
@@ -143,6 +162,57 @@ export class DateLineSettingTab extends PluginSettingTab {
 					}),
 			);
 
+		containerEl.createEl("h3", { text: "Kalender" });
+
+		new Setting(containerEl)
+			.setName("Weeknummers")
+			.setDesc("Toon weeknummers in de kalender (zoals Date Inserter).")
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOptions(WEEK_NUMBER_OPTIONS)
+					.setValue(String(this.plugin.settings.weekNumbers))
+					.onChange(async (v) => {
+						this.plugin.settings.weekNumbers = parseInt(v, 10) || 0;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Week start")
+			.setDesc("Eerste dag van de week in de kalender.")
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOptions(WEEK_START_OPTIONS)
+					.setValue(String(this.plugin.settings.weekStart))
+					.onChange(async (v) => {
+						this.plugin.settings.weekStart = parseInt(v, 10) || 0;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Kalendertaal")
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOptions(CALENDAR_LANGUAGES)
+					.setValue(this.plugin.settings.calendarLanguage)
+					.onChange(async (v) => {
+						this.plugin.settings.calendarLanguage = v;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Vandaag markeren")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.todayHighlight)
+					.onChange(async (v) => {
+						this.plugin.settings.todayHighlight = v;
+						await this.plugin.saveSettings();
+					}),
+			);
+
 		containerEl.createEl("h3", { text: "Picker & bewerken" });
 
 		new Setting(containerEl)
@@ -159,24 +229,14 @@ export class DateLineSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Automatisch toepassen")
-			.setDesc("Wijziging direct opslaan bij sluiten van de picker (blur).")
+			.setDesc(
+				"Wijziging direct opslaan bij sluiten van de picker (vinkje of sluiten).",
+			)
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.plugin.settings.autoApplyEdits)
 					.onChange(async (v) => {
 						this.plugin.settings.autoApplyEdits = v;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Kalender direct openen")
-			.setDesc("Toon meteen de systeem-kalender wanneer je op het icoon klikt.")
-			.addToggle((toggle) =>
-				toggle
-					.setValue(this.plugin.settings.openCalendarImmediately)
-					.onChange(async (v) => {
-						this.plugin.settings.openCalendarImmediately = v;
 						await this.plugin.saveSettings();
 					}),
 			);
