@@ -154,9 +154,17 @@
 	color: var(--text-accent);
 }
 
+/* Geselecteerde week (klik / notitie-week): accenttekst, geen vlak */
 .date-line-calendar-host .week-numbers .week.date-line-week-picked {
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background-color: transparent !important;
+	color: var(--text-accent) !important;
+	font-weight: 700;
+}
+
+/* Huidige kalenderweek (week waarin vandaag valt) */
+.date-line-calendar-host .week-numbers .week.date-line-week-current {
+	background-color: transparent !important;
+	color: var(--text-accent) !important;
 	font-weight: 600;
 }
 

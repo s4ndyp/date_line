@@ -37,6 +37,30 @@ function clearWeekRowHighlight(calendarHost: HTMLElement): void {
 		.forEach((el) => el.classList.remove("date-line-week-picked"));
 }
 
+/** Weeknummerrij waarin vandaag valt (kalender-huidige week). */
+function refreshCurrentWeekMarker(calendarHost: HTMLElement): void {
+	calendarHost
+		.querySelectorAll(".week-numbers .week.date-line-week-current")
+		.forEach((el) => el.classList.remove("date-line-week-current"));
+
+	const todayMs = moment().startOf("day").valueOf();
+	const grid = calendarHost.querySelector(".days .datepicker-grid");
+	if (!grid) return;
+
+	for (let row = 0; row < 6; row++) {
+		for (let col = 0; col < 7; col++) {
+			const cell = grid.children[row * 7 + col] as HTMLElement | undefined;
+			const ts = cell?.dataset?.date;
+			if (!ts || Number(ts) !== todayMs) continue;
+			const weekEl = calendarHost.querySelectorAll(".week-numbers .week")[
+				row
+			] as HTMLElement | undefined;
+			weekEl?.classList.add("date-line-week-current");
+			return;
+		}
+	}
+}
+
 export class DateLinePicker {
 	private onSubmit: (result: string) => void = () => {};
 	private submitted = false;
@@ -263,6 +287,21 @@ export class DateLinePicker {
 			},
 			{ signal: this.inputAbort.signal },
 		);
+
+		const refreshCurrentWeek = () => {
+			if (!settings.todayHighlight) return;
+			queueMicrotask(() => refreshCurrentWeekMarker(this.calendarHost));
+		};
+		for (const type of ["changeMonth", "changeYear", "changeView", "show"] as const) {
+			this.pickerInput?.addEventListener(type, refreshCurrentWeek, {
+				signal: this.inputAbort.signal,
+			});
+		}
+	}
+
+	private refreshCurrentWeekIfEnabled(): void {
+		if (!this.getSettings().todayHighlight) return;
+		refreshCurrentWeekMarker(this.calendarHost);
 	}
 
 	private mountVanillaCalendar(initial: moment.Moment): void {
@@ -325,9 +364,12 @@ export class DateLinePicker {
 
 		window.setTimeout(() => {
 			this.datepicker?.show();
-			if (this.selectionKind === "week" && this.weekAnchor) {
-				window.setTimeout(() => this.highlightWeekForAnchor(this.weekAnchor!), 0);
-			}
+			window.setTimeout(() => {
+				this.refreshCurrentWeekIfEnabled();
+				if (this.selectionKind === "week" && this.weekAnchor) {
+					this.highlightWeekForAnchor(this.weekAnchor);
+				}
+			}, 0);
 			this.initializingCalendar = false;
 		}, 0);
 	}
