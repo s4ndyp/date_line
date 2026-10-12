@@ -11,6 +11,7 @@ Geïnspireerd door de community-plugin [Datepicker](https://github.com/joycode-h
 - **Highlight-styling** (kleur, achtergrond, letterdikte, …) instelbaar in plugin-instellingen.
 - **Formaten kiezen** welke patronen gescand worden (per formaat aan/uit).
 - Codeblokken optioneel overslaan.
+- **Inline kalender** (vanillajs-datepicker, zoals Date Inserter) met optionele **weeknummers**, weekstart en taal.
 
 ## Ontwikkeling (lokaal)
 
@@ -32,17 +33,15 @@ In `.github/workflows/` staan twee workflows:
 | Workflow | Wanneer | Wat |
 |----------|---------|-----|
 | **build.yml** | Elke push/PR naar `main` | `npm ci` + `npm run build` (controleert dat de code compileert). Artefacten: `main.js`, manifest, CSS. |
-| **release.yml** | Bij een git-tag `x.y.z` (bijv. `0.1.0`) | Bouwt de plugin en maakt een **GitHub Release** met losse bestanden + `date-line.zip`. |
+| **release.yml** | Elke **push naar `main`** | Leest `version` uit `manifest.json`. Bestaat die release op GitHub nog niet → bouwt en publiceert automatisch tag + release. |
 
-**Nieuwe release maken:**
+**Nieuwe release na merge (automatisch):**
 
-```bash
-# Zet versie in manifest.json + versions.json, commit, dan:
-git tag 0.1.0
-git push origin 0.1.0
-```
+1. Verhoog `version` in **`manifest.json`** en voeg dezelfde sleutel toe in **`versions.json`** (Obsidian-compat).
+2. Merge naar `main`.
+3. GitHub Actions maakt release **`x.y.z`** als die nog niet bestaat (geen handmatige tag nodig).
 
-GitHub Actions bouwt dan automatisch; onder **Releases** op GitHub staan de installatiebestanden.
+Handmatig taggen kan nog steeds, maar is niet meer vereist.
 
 `main.js` staat bewust **niet** in git (`.gitignore`) — alleen TypeScript-bron. Obsidian heeft het gebundelde `main.js` nodig; dat komt uit je lokale `npm run build` of uit een GitHub Release.
 

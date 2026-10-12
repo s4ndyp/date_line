@@ -38,7 +38,11 @@ export interface DateLineSettings {
 	style: DateStyleSettings;
 	ignoreCodeblocks: boolean;
 	autoApplyEdits: boolean;
-	openCalendarImmediately: boolean;
 	overrideFormatOnEdit: boolean;
 	preferredDateFormat: string;
+	/** 0 = uit; 1 = ISO 8601; zie Date Inserter / vanillajs-datepicker */
+	weekNumbers: number;
+	weekStart: number;
+	calendarLanguage: string;
+	todayHighlight: boolean;
 }

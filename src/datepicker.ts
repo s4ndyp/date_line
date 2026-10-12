@@ -1,13 +1,13 @@
-import {
-	moment,
-	Notice,
-	Platform,
-	setIcon,
-} from "obsidian";
-import type { DateMatch } from "./types";
+import { moment, Notice, Platform, setIcon } from "obsidian";
+import { Datepicker } from "vanillajs-datepicker";
+import type { DatepickerOptions } from "vanillajs-datepicker/Datepicker";
+import "./calendarLocales";
+import { momentFormatToDatepicker } from "./momentFormat";
 import type { DateLineSettings } from "./types";
+import type { DateMatch } from "./types";
 
 declare const activeDocument: Document;
+
 function getActiveDocument(): Document {
 	return typeof activeDocument !== "undefined" ? activeDocument : document;
 }
@@ -17,8 +17,12 @@ export class DateLinePicker {
 	private submitted = false;
 	public isOpened = false;
 	private pickerContainer!: HTMLDivElement;
-	private pickerInput!: HTMLInputElement;
+	private pickerInput: HTMLInputElement | null = null;
+	private timeInput: HTMLInputElement | null = null;
 	private viewContainer!: HTMLElement;
+	private calendarHost!: HTMLDivElement;
+	private datepicker: Datepicker | null = null;
+	private selectedIsoDate = "";
 	public datetime!: DateMatch;
 	public cursorPosition = 0;
 	public closedByButton = false;
@@ -56,16 +60,13 @@ export class DateLinePicker {
 		}
 	}
 
-	focus(): void {
-		setTimeout(() => this.pickerInput.focus(), 200);
-	}
-
 	close(): void {
+		this.datepicker?.destroy();
+		this.datepicker = null;
 		const doc = getActiveDocument();
-		const containers = doc.getElementsByClassName("date-line-picker");
-		for (let i = 0; i < containers.length; i++) {
-			containers[i].remove();
-		}
+		Array.from(doc.getElementsByClassName("date-line-picker")).forEach((el) =>
+			el.remove(),
+		);
 		this.isOpened = false;
 	}
 
@@ -79,22 +80,82 @@ export class DateLinePicker {
 		this.close();
 	}
 
+	private buildSubmitValue(): string {
+		const { datetime } = this;
+		if (datetime.format.type === "TIME") {
+			return this.pickerInput?.value ?? "";
+		}
+
+		const picked = this.datepicker?.getDate() as Date | undefined;
+		const datePart = picked
+			? moment(picked).format("YYYY-MM-DD")
+			: this.selectedIsoDate;
+
+		if (datetime.format.type === "DATETIME") {
+			const timePart = this.timeInput?.value || "00:00";
+			if (!datePart) return "";
+			return `${datePart}T${timePart}`;
+		}
+
+		return datePart;
+	}
+
 	submit(): void {
 		if (this.submitted || DateLinePicker.escPressed || !this.isOpened) return;
 		this.submitted = true;
-		let submitValue = this.pickerInput.value;
+		let submitValue = this.buildSubmitValue();
 		if (submitValue.length === 0) return;
+
+		if (this.datetime.format.type === "TIME" && this.pickerInput) {
+			submitValue =
+				moment().format("YYYY-MM-DD") + "T" + this.pickerInput.value;
+		}
+
 		if (
 			moment(submitValue).format(this.datetime.format.formatToUser) ===
 			this.datetime.value
 		) {
 			return;
 		}
-		if (this.datetime.format.type === "TIME") {
-			submitValue =
-				moment().format("YYYY-MM-DD") + "T" + this.pickerInput.value;
-		}
 		setTimeout(() => this.onSubmit(submitValue), 0);
+	}
+
+	private mountVanillaCalendar(initial: moment.Moment): void {
+		const settings = this.getSettings();
+		this.calendarHost = this.pickerContainer.createDiv(
+			"date-line-calendar-host",
+		);
+		if (settings.weekNumbers !== 0) {
+			this.calendarHost.addClass("has-week-numbers");
+		}
+
+		const displayFormat = momentFormatToDatepicker(
+			this.datetime.format.formatToUser.split(" ")[0] ?? "YYYY-MM-DD",
+		);
+
+		const options: DatepickerOptions = {
+			language: settings.calendarLanguage,
+			weekStart: settings.weekStart,
+			weekNumbers: settings.weekNumbers,
+			todayHighlight: settings.todayHighlight,
+			format: displayFormat,
+			autohide: false,
+			maxView: 3,
+		};
+
+		this.datepicker = new Datepicker(this.calendarHost, options);
+
+		if (initial.isValid()) {
+			this.datepicker.setDate(initial.toDate());
+			this.selectedIsoDate = initial.format("YYYY-MM-DD");
+		}
+
+		this.calendarHost.addEventListener("changeDate", () => {
+			const picked = this.datepicker?.getDate() as Date | undefined;
+			if (picked) {
+				this.selectedIsoDate = moment(picked).format("YYYY-MM-DD");
+			}
+		});
 	}
 
 	open(
@@ -107,6 +168,7 @@ export class DateLinePicker {
 		this.cursorPosition = datetime.from;
 		this.closedByButton = false;
 		this.submitted = false;
+		this.selectedIsoDate = "";
 		DateLinePicker.escPressed = false;
 		DateLinePicker.enterPressed = false;
 
@@ -121,39 +183,57 @@ export class DateLinePicker {
 
 		this.close();
 		this.pickerContainer = this.viewContainer.createDiv("date-line-picker");
-		this.pickerInput = this.pickerContainer.createEl("input");
-		this.pickerInput.className = "date-line-picker-input";
+		this.pickerContainer.addClass("date-line-picker--open");
 
-		if (datetime.format.type === "TIME") this.pickerInput.type = "time";
-		else if (datetime.format.type === "DATE") this.pickerInput.type = "date";
-		else this.pickerInput.type = "datetime-local";
-
-		this.pickerInput.value = moment(datetime.value, [
+		const parsed = moment(datetime.value, [
 			"YYYY-MM-DD hh:mm A",
-			"YYYY-MM-DDThh:mm",
+			"YYYY-MM-DDTHH:mm",
+			"YYYY-MM-DD HH:mm",
 			"YYYY-MM-DD",
 			"DD-MM-YYYY HH:mm",
+			"DD-MM-YYYY hh:mm A",
 			"DD-MM-YYYY",
 			"DD.MM.YYYY",
 			"YYYY.MM.DD",
 			"YYYY/MM/DD",
 			"hh:mm A",
 			"HH:mm",
-		]).format(datetime.format.formatToPicker);
+		]);
 
-		const acceptButton = this.pickerContainer.createEl("button", {
+		if (datetime.format.type === "TIME") {
+			this.pickerInput = this.pickerContainer.createEl("input");
+			this.pickerInput.className = "date-line-picker-input";
+			this.pickerInput.type = "time";
+			this.pickerInput.value = parsed.isValid()
+				? parsed.format(datetime.format.formatToPicker)
+				: "";
+		} else {
+			this.mountVanillaCalendar(parsed);
+			if (datetime.format.type === "DATETIME") {
+				this.timeInput = this.pickerContainer.createEl("input", {
+					cls: "date-line-picker-input date-line-time-input",
+					attr: { type: "time" },
+				});
+				this.timeInput.value = parsed.isValid()
+					? parsed.format("HH:mm")
+					: "12:00";
+			}
+		}
+
+		const actions = this.pickerContainer.createDiv("date-line-picker-actions");
+		const acceptButton = actions.createEl("button", {
 			cls: "date-line-picker-btn",
 		});
 		setIcon(acceptButton, "check");
 
-		const cancelButton = this.pickerContainer.createEl("button", {
+		const cancelButton = actions.createEl("button", {
 			cls: "date-line-picker-btn",
 		});
 		setIcon(cancelButton, "x");
 
 		const buttonAbort = new AbortController();
 		const acceptHandler = () => {
-			if (this.pickerInput.value === "") {
+			if (!this.buildSubmitValue()) {
 				new Notice("Voer een geldige datum in");
 			} else {
 				DateLinePicker.enterPressed = true;
@@ -181,65 +261,29 @@ export class DateLinePicker {
 			signal: buttonAbort.signal,
 		});
 
-		this.pickerInput.addEventListener("keydown", (event) => {
+		const keyHandler = (event: KeyboardEvent) => {
 			if (event.key === "Enter") {
-				if (this.pickerInput.value === "") {
-					new Notice("Voer een geldige datum in");
-				} else {
-					DateLinePicker.enterPressed = true;
-					this.submitAndClose();
-				}
+				event.preventDefault();
+				acceptHandler();
 			}
 			if (event.key === "Escape") {
 				DateLinePicker.escPressed = true;
 				this.close();
 			}
-		});
+		};
+		this.pickerContainer.addEventListener("keydown", keyHandler);
 
-		this.pickerInput.addEventListener("blur", () => {
-			setTimeout(() => {
-				if (
-					!this.submitted &&
-					!DateLinePicker.escPressed &&
-					!DateLinePicker.enterPressed &&
-					this.getSettings().autoApplyEdits
-				) {
-					this.submit();
-				}
-			}, 300);
-		});
-
-		if (Platform.isMobile) {
-			this.pickerInput.addEventListener("touchstart", (e) =>
-				e.preventDefault(),
-			);
-			this.pickerInput.addEventListener("touchend", (e) => {
+		if (datetime.format.type === "TIME" && Platform.isMobile && this.pickerInput) {
+			const timeEl = this.pickerInput;
+			timeEl.addEventListener("touchstart", (e) => e.preventDefault());
+			timeEl.addEventListener("touchend", (e) => {
 				e.preventDefault();
-				(this.pickerInput as HTMLInputElement & { showPicker?: () => void })
-					.showPicker?.();
+				(timeEl as HTMLInputElement & { showPicker?: () => void }).showPicker?.();
 			});
 		}
 
 		this.updatePosition(pos);
 		this.isOpened = true;
-
-		const settings = this.getSettings();
-		if (settings.openCalendarImmediately && !DateLinePicker.calendarShownOnce) {
-			if (Platform.isMobile) {
-				this.pickerInput.focus();
-				setTimeout(() => {
-					(this.pickerInput as HTMLInputElement & { showPicker?: () => void })
-						.showPicker?.();
-					DateLinePicker.calendarShownOnce = true;
-				}, 150);
-			} else {
-				this.focus();
-				setTimeout(() => {
-					(this.pickerInput as HTMLInputElement & { showPicker?: () => void })
-						.showPicker?.();
-					DateLinePicker.calendarShownOnce = true;
-				}, 400);
-			}
-		}
+		DateLinePicker.calendarShownOnce = true;
 	}
 }
