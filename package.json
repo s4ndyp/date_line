@@ -1,6 +1,6 @@
 {
 	"name": "date-line",
-	"version": "0.3.5",
+	"version": "0.3.6",
 	"description": "Obsidian plugin: datums herkennen, stylen en bewerken met een kalender.",
 	"main": "main.js",
 	"scripts": {

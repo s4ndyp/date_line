@@ -1,7 +1,7 @@
 {
 	"id": "date-line",
 	"name": "Date Line",
-	"version": "0.3.5",
+	"version": "0.3.6",
 	"minAppVersion": "1.5.0",
 	"description": "Herken datums in je notities, styl ze, en pas ze aan met een kalenderpicker.",
 	"author": "s4ndyp",
