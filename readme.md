@@ -11,7 +11,7 @@ Geïnspireerd door de community-plugin [Datepicker](https://github.com/joycode-h
 - **Highlight-styling** (kleur, achtergrond, letterdikte, …) instelbaar in plugin-instellingen.
 - **Filters aan/uit** per datum- of weekveld; vaste tekst in Moment tussen `[ ]`, bijv. `[wk]`.
 - Codeblokken optioneel overslaan.
-- **Inline kalender** (vanillajs-datepicker, zoals Date Inserter) met optionele **weeknummers**, weekstart en taal.
+- **Inline kalender** (vanillajs-datepicker, zoals Date Inserter) met optionele **weeknummers**, weekstart en taal. Klik op een **weeknummer** in de picker voor weeknotatie (bv. `wk42/2026`), of op een dag voor datumnotatie.
 
 ## Ontwikkeling (lokaal)
 

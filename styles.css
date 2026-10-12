@@ -138,6 +138,22 @@
 	grid-template-columns: repeat(8, 1fr);
 }
 
+.date-line-calendar-host .week-numbers .week {
+	cursor: pointer;
+	border-radius: 4px;
+}
+
+.date-line-calendar-host .week-numbers .week:hover {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-accent);
+}
+
+.date-line-calendar-host .week-numbers .week.date-line-week-picked {
+	background-color: var(--interactive-accent);
+	color: var(--text-on-accent);
+	font-weight: 600;
+}
+
 .date-line-time-input {
 	align-self: flex-start;
 }

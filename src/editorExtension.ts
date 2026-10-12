@@ -146,8 +146,7 @@ export class DateLineCMPlugin implements PluginValue {
 				if (!pos) return;
 				this.datepicker?.close();
 				this.datepicker = new DateLinePicker(this.getSettings);
-				this.datepicker.open(pos, match, (result) => {
-					const newValue = this.formatEditedValue(match, result);
+				this.datepicker.open(pos, match, (newValue) => {
 					if (newValue === match.value) return;
 					this.performingReplace = true;
 					setTimeout(() => {
