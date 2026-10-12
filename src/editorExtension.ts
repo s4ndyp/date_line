@@ -210,23 +210,23 @@ function handleCalendarButtonClick(e: Event, view: EditorView): void {
 		debounceButton = false;
 	}, 100);
 
-	const target = e.target as HTMLElement;
-	if (!target.closest(".date-line-calendar-btn")) return;
+	const btn = (e.target as HTMLElement).closest(
+		".date-line-calendar-btn",
+	) as HTMLElement | null;
+	if (!btn) return;
 
 	e.preventDefault();
+	e.stopPropagation();
+
 	const plugin = view.plugin(dateLineCMPlugin);
 	if (!plugin) return;
 
-	const pos = view.posAtDOM(target);
-	const match = plugin.dates.find((d) => d.from === pos || d.from === pos - 1);
-	if (!match) {
-		const near = plugin.dates.find(
-			(d) => pos >= d.from - 2 && pos <= d.from + 2,
-		);
-		if (!near) return;
-		openOrToggle(view, plugin, near);
-		return;
-	}
+	const from = Number(btn.dataset.dateLineFrom);
+	if (Number.isNaN(from)) return;
+
+	const match = plugin.dates.find((d) => d.from === from);
+	if (!match) return;
+
 	openOrToggle(view, plugin, match);
 }
 

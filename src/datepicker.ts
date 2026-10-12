@@ -19,7 +19,6 @@ export class DateLinePicker {
 	private pickerContainer!: HTMLDivElement;
 	private pickerInput: HTMLInputElement | null = null;
 	private timeInput: HTMLInputElement | null = null;
-	private viewContainer!: HTMLElement;
 	private calendarHost!: HTMLDivElement;
 	private datepicker: Datepicker | null = null;
 	private selectedIsoDate = "";
@@ -34,29 +33,32 @@ export class DateLinePicker {
 	constructor(private getSettings: () => DateLineSettings) {}
 
 	updatePosition(pos: { top: number; left: number; bottom: number }): void {
-		const left = pos.left - this.viewContainer.getBoundingClientRect().left;
-		if (
-			left + this.pickerContainer.offsetWidth >
-			this.viewContainer.offsetWidth
-		) {
-			this.pickerContainer.style.left =
-				left -
-				(left +
-					this.pickerContainer.offsetWidth -
-					this.viewContainer.offsetWidth) +
-				"px";
-		} else {
-			this.pickerContainer.style.left = left + "px";
-		}
+		const el = this.pickerContainer;
+		const margin = 8;
+		el.style.position = "fixed";
+		el.style.zIndex = "1000";
 
-		const leafTop = this.viewContainer
-			.closest(".workspace-leaf-content")!
-			.getBoundingClientRect().top;
-		if (pos.bottom - leafTop > this.viewContainer.offsetHeight) {
-			this.pickerContainer.style.top =
-				pos.top - leafTop - this.pickerContainer.offsetHeight + "px";
-		} else {
-			this.pickerContainer.style.top = pos.bottom - leafTop + "px";
+		const width = el.offsetWidth || 300;
+		const height = el.offsetHeight || 340;
+
+		let left = pos.left;
+		let top = pos.bottom + margin;
+
+		if (left + width > window.innerWidth - margin) {
+			left = Math.max(margin, window.innerWidth - width - margin);
+		}
+		if (top + height > window.innerHeight - margin) {
+			top = pos.top - height - margin;
+		}
+		if (top < margin) top = margin;
+
+		el.style.left = `${left}px`;
+		el.style.top = `${top}px`;
+	}
+
+	focus(): void {
+		if (this.pickerInput) {
+			setTimeout(() => this.pickerInput!.focus(), 200);
 		}
 	}
 
@@ -143,7 +145,13 @@ export class DateLinePicker {
 			maxView: 3,
 		};
 
-		this.datepicker = new Datepicker(this.calendarHost, options);
+		try {
+			this.datepicker = new Datepicker(this.calendarHost, options);
+		} catch (err) {
+			console.error("Date Line: kalender initialiseren mislukt", err);
+			new Notice("Date Line: kalender kon niet geladen worden.");
+			return;
+		}
 
 		if (initial.isValid()) {
 			this.datepicker.setDate(initial.toDate());
@@ -173,16 +181,8 @@ export class DateLinePicker {
 		DateLinePicker.enterPressed = false;
 
 		const doc = getActiveDocument();
-		this.viewContainer = doc
-			.querySelector(".workspace-leaf.mod-active")
-			?.querySelector(".cm-editor") as HTMLElement;
-		if (!this.viewContainer) {
-			console.error("Date Line: editor container not found");
-			return;
-		}
-
 		this.close();
-		this.pickerContainer = this.viewContainer.createDiv("date-line-picker");
+		this.pickerContainer = doc.body.createDiv("date-line-picker");
 		this.pickerContainer.addClass("date-line-picker--open");
 
 		const parsed = moment(datetime.value, [
@@ -209,6 +209,10 @@ export class DateLinePicker {
 				: "";
 		} else {
 			this.mountVanillaCalendar(parsed);
+			if (!this.datepicker) {
+				this.close();
+				return;
+			}
 			if (datetime.format.type === "DATETIME") {
 				this.timeInput = this.pickerContainer.createEl("input", {
 					cls: "date-line-picker-input date-line-time-input",
@@ -282,8 +286,10 @@ export class DateLinePicker {
 			});
 		}
 
-		this.updatePosition(pos);
 		this.isOpened = true;
 		DateLinePicker.calendarShownOnce = true;
+
+		this.updatePosition(pos);
+		requestAnimationFrame(() => this.updatePosition(pos));
 	}
 }

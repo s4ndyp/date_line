@@ -14,7 +14,7 @@
 }
 
 .date-line-picker {
-	position: absolute;
+	position: fixed;
 	display: flex;
 	flex-direction: column;
 	align-items: stretch;
@@ -23,9 +23,10 @@
 	background-color: var(--background-primary);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: 8px;
-	box-shadow: var(--shadow-s);
-	z-index: 100;
-	max-width: min(100%, 22rem);
+	box-shadow: var(--shadow-l);
+	z-index: 1000;
+	max-width: min(calc(100vw - 16px), 22rem);
+	pointer-events: auto;
 }
 
 .date-line-picker-actions {

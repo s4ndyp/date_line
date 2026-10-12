@@ -8,9 +8,14 @@ import type { DateMatch } from "./types";
 import type { DateLineSettings } from "./types";
 
 class CalendarButtonWidget extends WidgetType {
+	constructor(readonly dateFrom: number) {
+		super();
+	}
+
 	toDOM(): HTMLElement {
 		const span = document.createElement("span");
 		span.className = "date-line-calendar-btn";
+		span.dataset.dateLineFrom = String(this.dateFrom);
 		span.setAttribute("aria-label", "Datum wijzigen");
 		setIcon(span, "calendar");
 		return span;
@@ -18,8 +23,8 @@ class CalendarButtonWidget extends WidgetType {
 	ignoreEvent(): boolean {
 		return false;
 	}
-	eq(): boolean {
-		return true;
+	eq(other: CalendarButtonWidget): boolean {
+		return other.dateFrom === this.dateFrom;
 	}
 }
 
@@ -45,7 +50,7 @@ export function buildDecorations(
 		) {
 			items.push(
 				Decoration.widget({
-					widget: new CalendarButtonWidget(),
+					widget: new CalendarButtonWidget(match.from),
 					side: -1,
 				}).range(match.from),
 			);
