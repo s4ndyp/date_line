@@ -1,6 +1,7 @@
 import { Datepicker } from "vanillajs-datepicker";
-import nlLocale from "vanillajs-datepicker/locales/nl";
+import nlPack from "vanillajs-datepicker/locales/nl";
 
+/** vanillajs vereist titleFormat op locale (DaysView.switchLabelFormat). */
 const enLocale = {
 	en: {
 		days: [
@@ -43,10 +44,17 @@ const enLocale = {
 			"Dec",
 		],
 		today: "Today",
-		monthsTitle: "Months",
 		clear: "Clear",
+		titleFormat: "MM y",
 		weekStart: 0,
-		format: "mm/dd/yyyy",
+		format: "yyyy-mm-dd",
+	},
+};
+
+const nlLocale = {
+	nl: {
+		...nlPack.nl,
+		titleFormat: "MM y",
 	},
 };
 
