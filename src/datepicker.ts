@@ -2,7 +2,6 @@ import { moment, Notice, Platform, setIcon } from "obsidian";
 import { Datepicker } from "vanillajs-datepicker";
 import type { DatepickerOptions } from "vanillajs-datepicker/Datepicker";
 import "./calendarLocales";
-import { momentFormatToDatepicker } from "./momentFormat";
 import type { DateLineSettings } from "./types";
 import type { DateMatch } from "./types";
 
@@ -138,16 +137,13 @@ export class DateLinePicker {
 			attr: { readonly: "true", tabindex: "-1" },
 		});
 
-		const displayFormat = momentFormatToDatepicker(
-			this.datetime.format.formatToUser.split(" ")[0] ?? "YYYY-MM-DD",
-		);
-
 		const options: DatepickerOptions = {
 			language: settings.calendarLanguage,
 			weekStart: settings.weekStart,
 			weekNumbers: settings.weekNumbers,
 			todayHighlight: settings.todayHighlight,
-			format: displayFormat,
+			// Intern altijd ISO; output blijft het formaat van de notitie (moment bij submit)
+			format: "yyyy-mm-dd",
 			container: this.calendarHost,
 			autohide: false,
 			maxView: 3,
