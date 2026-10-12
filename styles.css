@@ -130,8 +130,14 @@
 	color: var(--text-on-accent);
 }
 
-.date-line-calendar-host .datepicker-cell.today:not(.selected) {
-	box-shadow: inset 0 0 0 1px var(--interactive-accent);
+/* Vandaag: alleen accenttekst, geen mint/vol achtergrond uit vanillajs-default */
+.date-line-calendar-host .datepicker-cell.today:not(.selected),
+.date-line-calendar-host .datepicker-cell.today.focused:not(.selected) {
+	background: transparent !important;
+	background-color: transparent !important;
+	box-shadow: none !important;
+	color: var(--text-accent) !important;
+	font-weight: 600;
 }
 
 .date-line-calendar-host.has-week-numbers .datepicker-grid {

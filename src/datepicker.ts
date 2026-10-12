@@ -181,6 +181,20 @@ export class DateLinePicker {
 		setTimeout(() => this.onSubmit(noteText), 0);
 	}
 
+	private clearCalendarDaySelection(viewDate?: moment.Moment): void {
+		if (!this.datepicker) return;
+		const opts: { clear: boolean; viewDate?: Date } = { clear: true };
+		if (viewDate?.isValid()) {
+			opts.viewDate = viewDate.toDate();
+		}
+		this.initializingCalendar = true;
+		this.datepicker.setDate([], opts);
+		this.selectedIsoDate = "";
+		queueMicrotask(() => {
+			this.initializingCalendar = false;
+		});
+	}
+
 	private onWeekNumberClick(weekEl: HTMLElement): void {
 		const settings = this.getSettings();
 		if (!pickWeekFormatForOutput(settings)) return;
@@ -195,6 +209,7 @@ export class DateLinePicker {
 		this.weekAnchor = anchor;
 		clearWeekRowHighlight(this.calendarHost);
 		weekEl.classList.add("date-line-week-picked");
+		this.clearCalendarDaySelection(anchor);
 
 		if (settings.autoApplyEdits) {
 			this.submitAndClose();
@@ -296,8 +311,16 @@ export class DateLinePicker {
 
 		this.initializingCalendar = true;
 		if (initial.isValid()) {
-			this.datepicker.setDate(initial.toDate());
-			this.selectedIsoDate = initial.format("YYYY-MM-DD");
+			if (this.selectionKind === "week") {
+				this.datepicker.setDate([], {
+					clear: true,
+					viewDate: initial.toDate(),
+				});
+				this.selectedIsoDate = "";
+			} else {
+				this.datepicker.setDate(initial.toDate());
+				this.selectedIsoDate = initial.format("YYYY-MM-DD");
+			}
 		}
 
 		window.setTimeout(() => {
