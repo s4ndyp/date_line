@@ -130,17 +130,38 @@
 	color: var(--text-on-accent);
 }
 
+/* Dagen: hover alleen donkerder/grijzer vlak, tekstkleur gelijk houden */
+.date-line-calendar-host
+	.datepicker-cell.day:not(.disabled):not(.selected):not(.today):hover,
+.date-line-calendar-host
+	.datepicker-cell.day.focused:not(.disabled):not(.selected):not(.today) {
+	background-color: var(--background-modifier-active-hover) !important;
+	color: var(--text-normal) !important;
+}
+
+.date-line-calendar-host
+	.datepicker-cell.prev:not(.disabled):not(.selected):hover,
+.date-line-calendar-host
+	.datepicker-cell.next:not(.disabled):not(.selected):hover {
+	background-color: var(--background-modifier-active-hover) !important;
+	color: var(--text-muted) !important;
+}
+
 /* Actuele datum (vandaag): accenttekst, geen mint/vol achtergrond — ook als geselecteerd */
 .date-line-calendar-host .datepicker-cell.today,
 .date-line-calendar-host .datepicker-cell.today.focused,
 .date-line-calendar-host .datepicker-cell.today.selected,
-.date-line-calendar-host .datepicker-cell.today.selected:hover,
-.date-line-calendar-host .datepicker-cell.today:not(.disabled):hover {
+.date-line-calendar-host .datepicker-cell.today.selected:hover {
 	background: transparent !important;
 	background-color: transparent !important;
 	box-shadow: none !important;
 	color: var(--text-accent) !important;
 	font-weight: 600;
+}
+
+.date-line-calendar-host .datepicker-cell.today:not(.disabled):not(.selected):hover {
+	background-color: var(--background-modifier-active-hover) !important;
+	color: var(--text-accent) !important;
 }
 
 .date-line-calendar-host .datepicker-cell.today.selected,
@@ -156,11 +177,15 @@
 .date-line-calendar-host .week-numbers {
 	--date-line-week-fg: hsl(28, 55%, 48%);
 	--date-line-week-fg-strong: hsl(28, 62%, 42%);
+	--date-line-week-bg-hover: hsl(28, 45%, 88%);
+	--date-line-week-bg-picked: hsl(28, 52%, 78%);
 }
 
 .theme-dark .date-line-calendar-host .week-numbers {
 	--date-line-week-fg: hsl(28, 45%, 62%);
 	--date-line-week-fg-strong: hsl(28, 55%, 68%);
+	--date-line-week-bg-hover: hsl(28, 28%, 28%);
+	--date-line-week-bg-picked: hsl(28, 38%, 34%);
 }
 
 .date-line-calendar-host .week-numbers .dow {
@@ -176,14 +201,18 @@
 }
 
 .date-line-calendar-host .week-numbers .week:hover {
-	background-color: var(--background-modifier-hover);
+	background-color: var(--date-line-week-bg-hover);
 	color: var(--date-line-week-fg-strong);
 }
 
 .date-line-calendar-host .week-numbers .week.date-line-week-picked {
-	background-color: transparent !important;
+	background-color: var(--date-line-week-bg-picked) !important;
 	color: var(--date-line-week-fg-strong) !important;
 	font-weight: 700;
+}
+
+.date-line-calendar-host .week-numbers .week.date-line-week-picked:hover {
+	filter: brightness(1.08);
 }
 
 .date-line-calendar-host .week-numbers .week.date-line-week-current {
