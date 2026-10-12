@@ -1,0 +1,68 @@
+import { Editor, Notice, Plugin } from "obsidian";
+import type { EditorView } from "@codemirror/view";
+import {
+	dateLineCMPlugin,
+	setDateLineSettingsGetter,
+} from "./src/editorExtension";
+import { DateLineSettingTab } from "./src/settingsTab";
+import {
+	applyHighlightStyles,
+	DEFAULT_SETTINGS,
+} from "./src/settings";
+import type { DateLineSettings } from "./src/types";
+
+export default class DateLinePlugin extends Plugin {
+	settings: DateLineSettings = DEFAULT_SETTINGS;
+
+	async onload(): Promise<void> {
+		await this.loadSettings();
+		setDateLineSettingsGetter(() => this.settings);
+		applyHighlightStyles(this.settings);
+
+		this.registerEditorExtension(dateLineCMPlugin);
+
+		this.addCommand({
+			id: "edit-date-at-cursor",
+			name: "Datum op cursor bewerken",
+			editorCallback: (editor: Editor) => {
+				const editorView = (editor as Editor & { cm: EditorView }).cm;
+				const cursor = editorView.state.selection.main.head;
+				const plugin = editorView.plugin(dateLineCMPlugin);
+				const match = plugin?.dates.find(
+					(d) => d.from <= cursor && d.to >= cursor,
+				);
+				if (match && plugin) {
+					plugin.openDatepicker(editorView, match);
+				} else {
+					new Notice("Geen datum op de cursor gevonden.");
+				}
+			},
+		});
+
+		this.addSettingTab(new DateLineSettingTab(this.app, this));
+	}
+
+	onunload(): void {
+		document.getElementById("date-line-dynamic-styles")?.remove();
+	}
+
+	async loadSettings(): Promise<void> {
+		const data = (await this.loadData()) as Partial<DateLineSettings> | null;
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
+		if (data?.style) {
+			this.settings.style = Object.assign(
+				{},
+				DEFAULT_SETTINGS.style,
+				data.style,
+			);
+		}
+		if (!this.settings.enabledPatternIds?.length) {
+			this.settings.enabledPatternIds = [...DEFAULT_SETTINGS.enabledPatternIds];
+		}
+	}
+
+	async saveSettings(): Promise<void> {
+		await this.saveData(this.settings);
+		applyHighlightStyles(this.settings);
+	}
+}
