@@ -210,6 +210,9 @@ export class DateLineSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Vandaag markeren")
+			.setDesc(
+				"Vandaag in het raster en de huidige week in de weeknummerkolom (accenttekst).",
+			)
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.plugin.settings.todayHighlight)
