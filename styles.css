@@ -72,10 +72,56 @@
 	border-color: var(--background-modifier-border);
 }
 
-.date-line-calendar-host .datepicker-controls .button,
 .date-line-calendar-host .datepicker-view .dow,
 .date-line-calendar-host .datepicker-cell {
 	color: var(--text-normal);
+}
+
+/* Maand/titel bovenin — accent i.p.v. wit/grijs uit vanillajs-default CSS */
+.date-line-calendar-host .datepicker-header .datepicker-controls .view-switch {
+	flex: 1;
+	background-color: var(--interactive-accent) !important;
+	color: var(--text-on-accent) !important;
+	border-color: var(--interactive-accent) !important;
+	font-weight: var(--font-semibold, 600);
+	box-shadow: none !important;
+}
+
+.date-line-calendar-host
+	.datepicker-header
+	.datepicker-controls
+	.view-switch:hover,
+.date-line-calendar-host
+	.datepicker-header
+	.datepicker-controls
+	.view-switch:focus,
+.date-line-calendar-host
+	.datepicker-header
+	.datepicker-controls
+	.view-switch:active {
+	background-color: var(--interactive-accent-hover) !important;
+	color: var(--text-on-accent) !important;
+	border-color: var(--interactive-accent-hover) !important;
+}
+
+.date-line-calendar-host .datepicker-header .datepicker-controls .prev-button,
+.date-line-calendar-host .datepicker-header .datepicker-controls .next-button {
+	background-color: var(--background-modifier-hover) !important;
+	color: var(--text-normal) !important;
+	border-color: var(--background-modifier-border) !important;
+	box-shadow: none !important;
+}
+
+.date-line-calendar-host
+	.datepicker-header
+	.datepicker-controls
+	.prev-button:hover,
+.date-line-calendar-host
+	.datepicker-header
+	.datepicker-controls
+	.next-button:hover {
+	background-color: var(--background-modifier-active-hover) !important;
+	color: var(--text-accent) !important;
 }
 
 .date-line-calendar-host .datepicker-cell.selected,
