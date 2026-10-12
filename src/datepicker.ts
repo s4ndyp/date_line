@@ -131,6 +131,13 @@ export class DateLinePicker {
 			this.calendarHost.addClass("has-week-numbers");
 		}
 
+		// Zelfde patroon als Date Inserter: input + show(), niet inline in de editor
+		this.pickerInput = this.calendarHost.createEl("input", {
+			type: "text",
+			cls: "date-line-datepicker-input",
+			attr: { readonly: "true", tabindex: "-1" },
+		});
+
 		const displayFormat = momentFormatToDatepicker(
 			this.datetime.format.formatToUser.split(" ")[0] ?? "YYYY-MM-DD",
 		);
@@ -141,29 +148,47 @@ export class DateLinePicker {
 			weekNumbers: settings.weekNumbers,
 			todayHighlight: settings.todayHighlight,
 			format: displayFormat,
+			container: this.calendarHost,
 			autohide: false,
 			maxView: 3,
 		};
 
 		try {
-			this.datepicker = new Datepicker(this.calendarHost, options);
+			this.datepicker = new Datepicker(this.pickerInput, options);
 		} catch (err) {
 			console.error("Date Line: kalender initialiseren mislukt", err);
 			new Notice("Date Line: kalender kon niet geladen worden.");
 			return;
 		}
 
-		if (initial.isValid()) {
-			this.datepicker.setDate(initial.toDate());
-			this.selectedIsoDate = initial.format("YYYY-MM-DD");
-		}
+		this.pickerInput.addEventListener(
+			"hide",
+			(ev: Event & { detail?: { viewDate?: Date } }) => {
+				if (!this.isOpened) return;
+				window.setTimeout(() => {
+					if (!this.isOpened) return;
+					this.datepicker?.show();
+					const viewDate = ev.detail?.viewDate;
+					if (viewDate) {
+						this.datepicker?.setFocusedDate(viewDate);
+					}
+				}, 0);
+			},
+		);
 
-		this.calendarHost.addEventListener("changeDate", () => {
+		this.pickerInput.addEventListener("changeDate", () => {
 			const picked = this.datepicker?.getDate() as Date | undefined;
 			if (picked) {
 				this.selectedIsoDate = moment(picked).format("YYYY-MM-DD");
 			}
 		});
+
+		if (initial.isValid()) {
+			this.datepicker.setDate(initial.toDate());
+			this.selectedIsoDate = initial.format("YYYY-MM-DD");
+		}
+
+		window.setTimeout(() => this.datepicker?.show(), 0);
 	}
 
 	open(

@@ -43,8 +43,21 @@
 	position: absolute;
 	width: 1px;
 	height: 1px;
+	margin: 0;
+	padding: 0;
+	border: 0;
 	opacity: 0;
 	pointer-events: none;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+}
+
+.date-line-calendar-host .datepicker-dropdown {
+	position: relative !important;
+	display: block !important;
+	transform: none !important;
+	top: auto !important;
+	left: auto !important;
 }
 
 .date-line-calendar-host .datepicker {

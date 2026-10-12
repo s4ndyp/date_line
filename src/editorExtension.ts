@@ -241,7 +241,8 @@ function openOrToggle(
 	} else {
 		DateLinePicker.openedByButton = true;
 		DateLinePicker.calendarShownOnce = false;
-		plugin.openDatepicker(view, match);
+		// Na mousedown openen (voorkomt direct sluiten door outside-click handlers)
+		window.setTimeout(() => plugin.openDatepicker(view, match), 0);
 	}
 }
 
