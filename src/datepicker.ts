@@ -2,6 +2,7 @@ import { moment, Notice, Platform, setIcon } from "obsidian";
 import { Datepicker } from "vanillajs-datepicker";
 import type { DatepickerOptions } from "vanillajs-datepicker/Datepicker";
 import { ensureCalendarLocales } from "./calendarLocales";
+import { parseDateOrWeek } from "./weekParse";
 import type { DateLineSettings } from "./types";
 import type { DateMatch } from "./types";
 
@@ -115,10 +116,10 @@ export class DateLinePicker {
 				moment().format("YYYY-MM-DD") + "T" + this.pickerInput.value;
 		}
 
-		if (
-			moment(submitValue).format(this.datetime.format.formatToUser) ===
-			this.datetime.value
-		) {
+		const formatted = moment(submitValue).format(
+			this.datetime.format.formatToUser,
+		);
+		if (formatted === this.datetime.value) {
 			return;
 		}
 		setTimeout(() => this.onSubmit(submitValue), 0);
@@ -199,20 +200,13 @@ export class DateLinePicker {
 		this.pickerContainer = doc.body.createDiv("date-line-picker");
 		this.pickerContainer.addClass("date-line-picker--open");
 
-		const parsed = moment(datetime.value, [
-			"YYYY-MM-DD hh:mm A",
-			"YYYY-MM-DDTHH:mm",
-			"YYYY-MM-DD HH:mm",
-			"YYYY-MM-DD",
-			"DD-MM-YYYY HH:mm",
-			"DD-MM-YYYY hh:mm A",
-			"DD-MM-YYYY",
-			"DD.MM.YYYY",
-			"YYYY.MM.DD",
-			"YYYY/MM/DD",
-			"hh:mm A",
-			"HH:mm",
-		]);
+		const parsed =
+			datetime.format.type === "TIME"
+				? moment(datetime.value, ["hh:mm A", "HH:mm"], true)
+				: parseDateOrWeek(
+						datetime.value,
+						datetime.format.formatToUser,
+					);
 
 		if (datetime.format.type === "TIME") {
 			this.pickerInput = this.pickerContainer.createEl("input");

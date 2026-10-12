@@ -1,42 +1,25 @@
-import { DATE_PATTERNS } from "./patterns";
-import type { DateFormat, DateLineSettings } from "./types";
+import {
+	formatLooksLikeWeekNotation,
+	momentFormatToMatchRegex,
+} from "./customFormatRegex";
+import type { CustomFormatField, DateFormat, DateLineSettings } from "./types";
 
-function separatorForMomentFormat(format: string): string {
-	if (format.includes(".")) return "\\.";
-	if (format.includes("/")) return "\\/";
-	return "-";
-}
-
-function buildFormatsForPattern(
+function buildFromMomentFormat(
 	momentFormat: string,
 	patternId: string,
 ): DateFormat[] {
-	const separator = separatorForMomentFormat(momentFormat);
-	const datePart = `\\d{1,4}${separator}\\d{1,2}${separator}\\d{1,4}`;
+	const regex = momentFormatToMatchRegex(momentFormat);
+	if (!regex) return [];
+
+	const isWeek = formatLooksLikeWeekNotation(momentFormat);
+	const type = isWeek ? "WEEK" : "DATE";
 
 	return [
 		{
-			regex: new RegExp(
-				`${datePart} \\d{1,2}:\\d{1,2}( )?([apm]{2})`,
-				"ig",
-			),
-			formatToUser: `${momentFormat} hh:mm A`,
-			formatToPicker: "YYYY-MM-DDTHH:mm",
-			type: "DATETIME",
-			patternId,
-		},
-		{
-			regex: new RegExp(`${datePart} \\d{1,2}:\\d{1,2}`, "g"),
-			formatToUser: `${momentFormat} HH:mm`,
-			formatToPicker: "YYYY-MM-DDTHH:mm",
-			type: "DATETIME",
-			patternId,
-		},
-		{
-			regex: new RegExp(datePart, "g"),
+			regex,
 			formatToUser: momentFormat,
 			formatToPicker: "YYYY-MM-DD",
-			type: "DATE",
+			type,
 			patternId,
 		},
 	];
@@ -59,23 +42,25 @@ const TIME_FORMATS: DateFormat[] = [
 	},
 ];
 
+function addCustomField(
+	formats: DateFormat[],
+	field: CustomFormatField,
+	id: string,
+): void {
+	if (!field.enabled || !field.format.trim()) return;
+	formats.push(...buildFromMomentFormat(field.format.trim(), id));
+}
+
 export function getActiveFormats(settings: DateLineSettings): DateFormat[] {
-	const enabled = new Set(settings.enabledPatternIds);
 	const formats: DateFormat[] = [];
 
-	for (const pattern of DATE_PATTERNS) {
-		if (!enabled.has(pattern.id)) continue;
-		formats.push(...buildFormatsForPattern(pattern.momentFormat, pattern.id));
-	}
+	addCustomField(formats, settings.customDate1, "custom-date-1");
+	addCustomField(formats, settings.customDate2, "custom-date-2");
+	addCustomField(formats, settings.customWeek, "custom-week");
 
-	if (enabled.has("time")) {
+	if (settings.scanTime) {
 		formats.push(...TIME_FORMATS);
 	}
 
 	return formats;
 }
-
-export const TIME_PATTERN_OPTION = {
-	id: "time",
-	label: "Tijd (HH:mm of hh:mm AM/PM)",
-} as const;

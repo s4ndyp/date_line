@@ -6,10 +6,10 @@ Geïnspireerd door de community-plugin [Datepicker](https://github.com/joycode-h
 
 ## Functies
 
-- **Datumherkenning** in de editor (zichtbaar gebied) voor veelgebruikte notaties (ISO, NL/EU punten en streepjes, US, slashes, optioneel tijd).
+- **Datumherkenning** via twee vrij instelbare Moment-formaten (bijv. `DD/MM/YYYY`), plus een **weeknotatie** (bijv. `[wk]WW/YYYY` → `wk12/2026`), en optioneel tijd.
 - **Kalendericoon** vóór elke herkende datum; klik om te bewerken.
 - **Highlight-styling** (kleur, achtergrond, letterdikte, …) instelbaar in plugin-instellingen.
-- **Formaten kiezen** welke patronen gescand worden (per formaat aan/uit).
+- **Filters aan/uit** per datum- of weekveld; vaste tekst in Moment tussen `[ ]`, bijv. `[wk]`.
 - Codeblokken optioneel overslaan.
 - **Inline kalender** (vanillajs-datepicker, zoals Date Inserter) met optionele **weeknummers**, weekstart en taal.
 

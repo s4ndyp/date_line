@@ -1,4 +1,10 @@
-export type DateTokenType = "DATE" | "DATETIME" | "TIME";
+export type DateTokenType = "DATE" | "DATETIME" | "TIME" | "WEEK";
+
+export interface CustomFormatField {
+	enabled: boolean;
+	/** Moment.js-notatie, bijv. DD/MM/YYYY of [wk]WW/YYYY */
+	format: string;
+}
 
 export interface DateFormatPattern {
 	id: string;
@@ -32,7 +38,10 @@ export interface DateStyleSettings {
 }
 
 export interface DateLineSettings {
-	enabledPatternIds: string[];
+	customDate1: CustomFormatField;
+	customDate2: CustomFormatField;
+	customWeek: CustomFormatField;
+	scanTime: boolean;
 	showCalendarIcon: boolean;
 	highlightDates: boolean;
 	style: DateStyleSettings;
