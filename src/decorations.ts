@@ -46,7 +46,9 @@ export function buildDecorations(
 
 		if (
 			settings.showCalendarIcon &&
-			(match.format.type === "DATE" || match.format.type === "DATETIME")
+			(match.format.type === "DATE" ||
+				match.format.type === "DATETIME" ||
+				match.format.type === "WEEK")
 		) {
 			items.push(
 				Decoration.widget({

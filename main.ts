@@ -8,6 +8,8 @@ import { DateLineSettingTab } from "./src/settingsTab";
 import {
 	applyHighlightStyles,
 	DEFAULT_SETTINGS,
+	migrateLegacyPatternSettings,
+	normalizeSettings,
 } from "./src/settings";
 import type { DateLineSettings } from "./src/types";
 import { registerCalendarLocales } from "./src/calendarLocales";
@@ -62,17 +64,15 @@ export default class DateLinePlugin extends Plugin {
 	}
 
 	async loadSettings(): Promise<void> {
-		const data = (await this.loadData()) as Partial<DateLineSettings> | null;
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
-		if (data?.style) {
-			this.settings.style = Object.assign(
-				{},
-				DEFAULT_SETTINGS.style,
-				data.style,
-			);
-		}
-		if (!this.settings.enabledPatternIds?.length) {
-			this.settings.enabledPatternIds = [...DEFAULT_SETTINGS.enabledPatternIds];
+		const data = (await this.loadData()) as
+			| (Partial<DateLineSettings> & Record<string, unknown>)
+			| null;
+		const migrated = migrateLegacyPatternSettings(data);
+		this.settings = normalizeSettings(
+			migrated ? { ...data, ...migrated } : data,
+		);
+		if (migrated) {
+			await this.saveData(this.settings);
 		}
 	}
 

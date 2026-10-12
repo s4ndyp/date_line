@@ -11,6 +11,7 @@ import { moment } from "obsidian";
 import { buildDecorations } from "./decorations";
 import { DateLinePicker } from "./datepicker";
 import { getActiveFormats } from "./formats";
+import { DEFAULT_SETTINGS } from "./settings";
 import type { DateLineSettings } from "./types";
 import type { DateMatch } from "./types";
 
@@ -129,8 +130,8 @@ export class DateLineCMPlugin implements PluginValue {
 			}
 			return parsed.format(match.format.formatToUser);
 		}
-		if (match.format.type === "DATE") {
-			if (settings.overrideFormatOnEdit) {
+		if (match.format.type === "DATE" || match.format.type === "WEEK") {
+			if (settings.overrideFormatOnEdit && match.format.type === "DATE") {
 				return parsed.format(settings.preferredDateFormat);
 			}
 			return parsed.format(match.format.formatToUser);
@@ -180,27 +181,7 @@ export class DateLineCMPlugin implements PluginValue {
 	}
 }
 
-let settingsGetter: SettingsGetter = () => ({
-	enabledPatternIds: [],
-	showCalendarIcon: true,
-	highlightDates: true,
-	style: {
-		textColor: "",
-		backgroundColor: "",
-		fontWeight: "",
-		textDecoration: "",
-		borderRadius: "",
-		padding: "",
-	},
-	ignoreCodeblocks: true,
-	autoApplyEdits: true,
-	overrideFormatOnEdit: false,
-	preferredDateFormat: "YYYY-MM-DD",
-	weekNumbers: 1,
-	weekStart: 1,
-	calendarLanguage: "nl",
-	todayHighlight: true,
-});
+let settingsGetter: SettingsGetter = () => DEFAULT_SETTINGS;
 
 export function setDateLineSettingsGetter(getter: SettingsGetter): void {
 	settingsGetter = getter;

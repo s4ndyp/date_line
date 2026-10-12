@@ -4,8 +4,6 @@ import {
 	PluginSettingTab,
 	Setting,
 } from "obsidian";
-import { DATE_PATTERNS } from "./patterns";
-import { TIME_PATTERN_OPTION } from "./formats";
 import { CALENDAR_LANGUAGES } from "./calendarLocales";
 import type DateLinePlugin from "../main";
 
@@ -42,35 +40,43 @@ export class DateLineSettingTab extends PluginSettingTab {
 		containerEl.createEl("h3", { text: "Datumformaten scannen" });
 		containerEl.createEl("p", {
 			cls: "setting-item-description",
-			text: "Kies welke datum- en tijdnotaties in je notities herkend worden.",
+			text: "Moment.js-notatie. Vaste tekst tussen vierkante haken, bijv. [wk] voor wk12/2026.",
 		});
 
-		const togglePattern = (id: string, label: string) => {
-			new Setting(containerEl)
-				.setName(label)
-				.addToggle((toggle) =>
-					toggle
-						.setValue(this.plugin.settings.enabledPatternIds.includes(id))
-						.onChange(async (on) => {
-							const ids = new Set(this.plugin.settings.enabledPatternIds);
-							if (on) ids.add(id);
-							else ids.delete(id);
-							this.plugin.settings.enabledPatternIds = [...ids];
-							await this.plugin.saveSettings();
-						}),
-				);
-		};
+		this.addCustomFormatSetting(
+			"Datumfilter 1",
+			"customDate1",
+			"DD/MM/YYYY",
+		);
+		this.addCustomFormatSetting(
+			"Datumfilter 2",
+			"customDate2",
+			"YYYY-MM-DD",
+		);
+		this.addCustomFormatSetting(
+			"Weeknotatie",
+			"customWeek",
+			"[wk]WW/YYYY",
+			"Weeknummers (WW of W) zonder dag; opent de kalender op die ISO-week.",
+		);
 
-		for (const pattern of DATE_PATTERNS) {
-			togglePattern(pattern.id, pattern.label);
-		}
-		togglePattern(TIME_PATTERN_OPTION.id, TIME_PATTERN_OPTION.label);
+		new Setting(containerEl)
+			.setName("Tijd scannen")
+			.setDesc("Herken losse tijden zoals 14:30 of 2:30 pm.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.scanTime)
+					.onChange(async (v) => {
+						this.plugin.settings.scanTime = v;
+						await this.plugin.saveSettings();
+					}),
+			);
 
 		containerEl.createEl("h3", { text: "Weergave" });
 
 		new Setting(containerEl)
 			.setName("Kalendericoon tonen")
-			.setDesc("Klein kalenderlogo vóór elke herkende datum.")
+			.setDesc("Klein kalenderlogo vóór elke herkende datum of week.")
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.plugin.settings.showCalendarIcon)
@@ -82,7 +88,7 @@ export class DateLineSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Datums highlighten")
-			.setDesc("Pas eigen styling toe op herkende datums in de editor.")
+			.setDesc("Pas eigen styling toe op herkende datums en weeknotaties.")
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.plugin.settings.highlightDates)
@@ -267,5 +273,36 @@ export class DateLineSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					});
 			});
+	}
+
+	private addCustomFormatSetting(
+		name: string,
+		key: "customDate1" | "customDate2" | "customWeek",
+		placeholder: string,
+		desc?: string,
+	): void {
+		const setting = new Setting(this.containerEl)
+			.setName(name)
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings[key].enabled)
+					.onChange(async (on) => {
+						this.plugin.settings[key].enabled = on;
+						await this.plugin.saveSettings();
+					}),
+			)
+			.addMomentFormat((component: MomentFormatComponent) => {
+				component
+					.setDefaultFormat(placeholder)
+					.setValue(this.plugin.settings[key].format)
+					.onChange(async (value) => {
+						this.plugin.settings[key].format = value;
+						await this.plugin.saveSettings();
+					});
+			});
+
+		if (desc) {
+			setting.setDesc(desc);
+		}
 	}
 }
