@@ -9,9 +9,13 @@ import {
 import { CALENDAR_LANGUAGES } from "./calendarLocales";
 import { isHexColor, toPickerHex } from "./colorUtils";
 import {
+	applyStylePreset,
+	captureStylePreset,
 	DEFAULT_BACKGROUND_COLOR_HEX,
 	DEFAULT_TEXT_COLOR_HEX,
+	normalizeStyleSettings,
 } from "./settings";
+import { presetSummary, STYLE_PRESET_COUNT } from "./stylePresets";
 import type DateLinePlugin from "../main";
 
 const WEEK_START_OPTIONS: Record<string, string> = {
@@ -164,6 +168,16 @@ export class DateLineSettingTab extends PluginSettingTab {
 					}),
 			);
 
+		containerEl.createEl("h3", { text: "Styling-presets" });
+		containerEl.createEl("p", {
+			cls: "setting-item-description",
+			text: "Bewaar de huidige highlight-styling (kleuren, letterdikte, radius, padding en toggle highlight) in een van twee slots en zet die later met één klik terug.",
+		});
+
+		for (let i = 0; i < STYLE_PRESET_COUNT; i++) {
+			this.addStylePresetSlot(i);
+		}
+
 		containerEl.createEl("h3", { text: "Kalender" });
 
 		new Setting(containerEl)
@@ -303,6 +317,53 @@ export class DateLineSettingTab extends PluginSettingTab {
 		if (desc) {
 			setting.setDesc(desc);
 		}
+	}
+
+	private addStylePresetSlot(index: number): void {
+		const slotLabel = `Preset ${index + 1}`;
+		const preset = this.plugin.settings.stylePresets[index] ?? null;
+
+		new Setting(this.containerEl)
+			.setName(slotLabel)
+			.setDesc(presetSummary(preset))
+			.addButton((btn) =>
+				btn
+					.setButtonText("Opslaan")
+					.setTooltip("Huidige styling in dit preset-slot zetten")
+					.onClick(async () => {
+						this.plugin.settings.stylePresets[index] =
+							captureStylePreset(this.plugin.settings);
+						await this.plugin.saveSettings();
+						this.display();
+					}),
+			)
+			.addButton((btn) => {
+				btn
+					.setButtonText("Toepassen")
+					.setTooltip("Opgeslagen preset laden")
+					.setDisabled(!preset);
+				btn.onClick(async () => {
+					const saved = this.plugin.settings.stylePresets[index];
+					if (!saved) return;
+					applyStylePreset(this.plugin.settings, saved);
+					this.plugin.settings.style = normalizeStyleSettings(
+						this.plugin.settings.style,
+					);
+					await this.plugin.saveSettings();
+					this.display();
+				});
+			})
+			.addButton((btn) => {
+				btn
+					.setButtonText("Wissen")
+					.setTooltip("Preset-slot leegmaken")
+					.setDisabled(!preset);
+				btn.onClick(async () => {
+					this.plugin.settings.stylePresets[index] = null;
+					await this.plugin.saveSettings();
+					this.display();
+				});
+			});
 	}
 
 	private addStyleColorSetting(

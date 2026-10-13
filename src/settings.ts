@@ -1,5 +1,6 @@
-import type { CustomFormatField, DateLineSettings } from "./types";
+import type { CustomFormatField, DateLineSettings, StylePresetSlot } from "./types";
 import { DATE_PATTERNS } from "./patterns";
+import { emptyStylePresets, STYLE_PRESET_COUNT } from "./stylePresets";
 
 /** Zelfde defaults als Shortag (hex + kleurpicker). */
 export const DEFAULT_TEXT_COLOR_HEX = "#7c3aed";
@@ -35,6 +36,7 @@ export const DEFAULT_SETTINGS: DateLineSettings = {
 		borderRadius: "3px",
 		padding: "0 2px",
 	},
+	stylePresets: emptyStylePresets(),
 	ignoreCodeblocks: true,
 	autoApplyEdits: true,
 	overrideFormatOnEdit: false,
@@ -98,6 +100,40 @@ export function applyHighlightStyles(settings: DateLineSettings): void {
 }`;
 }
 
+function cloneStylePresets(raw: unknown): (StylePresetSlot | null)[] {
+	const slots = emptyStylePresets();
+	if (!Array.isArray(raw)) return slots;
+	for (let i = 0; i < STYLE_PRESET_COUNT; i++) {
+		const item = raw[i];
+		if (!item || typeof item !== "object") continue;
+		const p = item as StylePresetSlot;
+		if (!p.style || typeof p.style !== "object") continue;
+		slots[i] = {
+			highlightDates: Boolean(p.highlightDates),
+			style: { ...DEFAULT_SETTINGS.style, ...p.style },
+			savedAt: typeof p.savedAt === "number" ? p.savedAt : undefined,
+		};
+	}
+	return slots;
+}
+
+export function normalizeStyleSettings(
+	style: DateLineSettings["style"],
+): DateLineSettings["style"] {
+	const merged = Object.assign({}, DEFAULT_SETTINGS.style, style);
+	return {
+		textColor: merged.textColor?.trim() || DEFAULT_SETTINGS.style.textColor,
+		backgroundColor:
+			merged.backgroundColor?.trim() ||
+			DEFAULT_SETTINGS.style.backgroundColor,
+		fontWeight: merged.fontWeight ?? DEFAULT_SETTINGS.style.fontWeight,
+		textDecoration:
+			merged.textDecoration ?? DEFAULT_SETTINGS.style.textDecoration,
+		borderRadius: merged.borderRadius ?? DEFAULT_SETTINGS.style.borderRadius,
+		padding: merged.padding ?? DEFAULT_SETTINGS.style.padding,
+	};
+}
+
 function mergeCustomField(
 	defaults: CustomFormatField,
 	partial: Partial<CustomFormatField> | undefined,
@@ -118,18 +154,7 @@ export function normalizeSettings(
 ): DateLineSettings {
 	const base = Object.assign({}, DEFAULT_SETTINGS, raw);
 	if (raw?.style) {
-		const merged = Object.assign({}, DEFAULT_SETTINGS.style, raw.style);
-		base.style = {
-			textColor: merged.textColor?.trim() || DEFAULT_SETTINGS.style.textColor,
-			backgroundColor:
-				merged.backgroundColor?.trim() ||
-				DEFAULT_SETTINGS.style.backgroundColor,
-			fontWeight: merged.fontWeight ?? DEFAULT_SETTINGS.style.fontWeight,
-			textDecoration:
-				merged.textDecoration ?? DEFAULT_SETTINGS.style.textDecoration,
-			borderRadius: merged.borderRadius ?? DEFAULT_SETTINGS.style.borderRadius,
-			padding: merged.padding ?? DEFAULT_SETTINGS.style.padding,
-		};
+		base.style = normalizeStyleSettings(raw.style);
 	}
 	base.customDate1 = mergeCustomField(
 		DEFAULT_SETTINGS.customDate1,
@@ -146,5 +171,8 @@ export function normalizeSettings(
 	if (typeof raw?.scanTime === "boolean") {
 		base.scanTime = raw.scanTime;
 	}
+	base.stylePresets = cloneStylePresets(raw?.stylePresets);
 	return base;
 }
+
+export { applyStylePreset, captureStylePreset } from "./stylePresets";
