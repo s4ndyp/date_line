@@ -124,10 +124,12 @@
 	color: var(--text-accent) !important;
 }
 
+/* Geselecteerde dag: tekst + lichte achtergrond (zelfde als editor/Shortag) */
 .date-line-calendar-host .datepicker-cell.selected:not(.today),
 .date-line-calendar-host .datepicker-cell.selected:not(.today):hover {
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
+	background-color: var(--date-line-highlight-bg, #ede9fe) !important;
+	color: var(--date-line-highlight-fg, #7c3aed) !important;
+	font-weight: 600;
 }
 
 /* Dagen: hover alleen donkerder/grijzer vlak, tekstkleur gelijk houden */
@@ -147,11 +149,9 @@
 	color: var(--text-muted) !important;
 }
 
-/* Actuele datum (vandaag): accenttekst, geen mint/vol achtergrond — ook als geselecteerd */
-.date-line-calendar-host .datepicker-cell.today,
-.date-line-calendar-host .datepicker-cell.today.focused,
-.date-line-calendar-host .datepicker-cell.today.selected,
-.date-line-calendar-host .datepicker-cell.today.selected:hover {
+/* Actuele datum: accenttekst; geselecteerd = highlight-kleuren uit instellingen */
+.date-line-calendar-host .datepicker-cell.today:not(.selected),
+.date-line-calendar-host .datepicker-cell.today.focused:not(.selected) {
 	background: transparent !important;
 	background-color: transparent !important;
 	box-shadow: none !important;
@@ -166,6 +166,8 @@
 
 .date-line-calendar-host .datepicker-cell.today.selected,
 .date-line-calendar-host .datepicker-cell.today.selected:hover {
+	background-color: var(--date-line-highlight-bg, #ede9fe) !important;
+	color: var(--date-line-highlight-fg, #7c3aed) !important;
 	font-weight: 700;
 }
 
@@ -206,13 +208,13 @@
 }
 
 .date-line-calendar-host .week-numbers .week.date-line-week-picked {
-	background-color: var(--date-line-week-bg-picked) !important;
-	color: var(--date-line-week-fg-strong) !important;
+	background-color: var(--date-line-highlight-bg, #ede9fe) !important;
+	color: var(--date-line-highlight-fg, #7c3aed) !important;
 	font-weight: 700;
 }
 
 .date-line-calendar-host .week-numbers .week.date-line-week-picked:hover {
-	filter: brightness(1.08);
+	filter: brightness(1.06);
 }
 
 .date-line-calendar-host .week-numbers .week.date-line-week-current {

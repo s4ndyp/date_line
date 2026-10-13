@@ -1,10 +1,17 @@
 import {
 	App,
+	ColorComponent,
 	MomentFormatComponent,
 	PluginSettingTab,
 	Setting,
+	TextComponent,
 } from "obsidian";
 import { CALENDAR_LANGUAGES } from "./calendarLocales";
+import { isHexColor, toPickerHex } from "./colorUtils";
+import {
+	DEFAULT_BACKGROUND_COLOR_HEX,
+	DEFAULT_TEXT_COLOR_HEX,
+} from "./settings";
 import type DateLinePlugin from "../main";
 
 const WEEK_START_OPTIONS: Record<string, string> = {
@@ -98,29 +105,18 @@ export class DateLineSettingTab extends PluginSettingTab {
 					}),
 			);
 
-		new Setting(containerEl)
-			.setName("Tekstkleur")
-			.addText((text) =>
-				text
-					.setPlaceholder("var(--text-accent)")
-					.setValue(this.plugin.settings.style.textColor)
-					.onChange(async (v) => {
-						this.plugin.settings.style.textColor = v;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Achtergrondkleur")
-			.addText((text) =>
-				text
-					.setPlaceholder("rgba(var(--color-accent-rgb), 0.12)")
-					.setValue(this.plugin.settings.style.backgroundColor)
-					.onChange(async (v) => {
-						this.plugin.settings.style.backgroundColor = v;
-						await this.plugin.saveSettings();
-					}),
-			);
+		this.addStyleColorSetting(
+			"Tekstkleur",
+			"textColor",
+			DEFAULT_TEXT_COLOR_HEX,
+			"Zoals Shortag: kleur via het rondje of hex (bijv. #7c3aed). Ook CSS-waarden mogelijk.",
+		);
+		this.addStyleColorSetting(
+			"Achtergrondkleur",
+			"backgroundColor",
+			DEFAULT_BACKGROUND_COLOR_HEX,
+			"Achtergrond voor highlights in de editor én geselecteerde dag/week in de picker.",
+		);
 
 		new Setting(containerEl)
 			.setName("Letterdikte")
@@ -307,5 +303,50 @@ export class DateLineSettingTab extends PluginSettingTab {
 		if (desc) {
 			setting.setDesc(desc);
 		}
+	}
+
+	private addStyleColorSetting(
+		name: string,
+		key: "textColor" | "backgroundColor",
+		fallbackHex: string,
+		desc?: string,
+	): void {
+		const setting = new Setting(this.containerEl).setName(name);
+		if (desc) setting.setDesc(desc);
+
+		let pickerRef: ColorComponent | undefined;
+		let textRef: TextComponent | undefined;
+
+		setting.addColorPicker((picker) => {
+			pickerRef = picker;
+			picker
+				.setValue(
+					toPickerHex(this.plugin.settings.style[key], fallbackHex),
+				)
+				.onChange(async (hex) => {
+					this.plugin.settings.style[key] = hex;
+					textRef?.setValue(hex);
+					await this.plugin.saveSettings();
+				});
+		});
+
+		setting.addText((text) => {
+			textRef = text;
+			text
+				.setPlaceholder(fallbackHex)
+				.setValue(this.plugin.settings.style[key])
+				.onChange(async (raw) => {
+					const trimmed = raw.trim();
+					if (!trimmed) return;
+					this.plugin.settings.style[key] = trimmed;
+					if (isHexColor(trimmed)) {
+						const hex = toPickerHex(trimmed, fallbackHex);
+						this.plugin.settings.style[key] = hex;
+						pickerRef?.setValue(hex);
+						text.setValue(hex);
+					}
+					await this.plugin.saveSettings();
+				});
+		});
 	}
 }

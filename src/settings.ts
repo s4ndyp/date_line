@@ -1,6 +1,10 @@
 import type { CustomFormatField, DateLineSettings } from "./types";
 import { DATE_PATTERNS } from "./patterns";
 
+/** Zelfde defaults als Shortag (hex + kleurpicker). */
+export const DEFAULT_TEXT_COLOR_HEX = "#7c3aed";
+export const DEFAULT_BACKGROUND_COLOR_HEX = "#ede9fe";
+
 export const DEFAULT_CUSTOM_DATE1: CustomFormatField = {
 	enabled: true,
 	format: "DD/MM/YYYY",
@@ -24,8 +28,8 @@ export const DEFAULT_SETTINGS: DateLineSettings = {
 	showCalendarIcon: true,
 	highlightDates: true,
 	style: {
-		textColor: "var(--text-accent)",
-		backgroundColor: "rgba(var(--color-accent-rgb), 0.12)",
+		textColor: DEFAULT_TEXT_COLOR_HEX,
+		backgroundColor: DEFAULT_BACKGROUND_COLOR_HEX,
 		fontWeight: "500",
 		textDecoration: "none",
 		borderRadius: "3px",
@@ -87,6 +91,10 @@ export function applyHighlightStyles(settings: DateLineSettings): void {
 	text-decoration: ${s.textDecoration};
 	border-radius: ${s.borderRadius};
 	padding: ${s.padding};
+}
+.date-line-calendar-host {
+	--date-line-highlight-fg: ${s.textColor};
+	--date-line-highlight-bg: ${s.backgroundColor};
 }`;
 }
 
@@ -110,7 +118,18 @@ export function normalizeSettings(
 ): DateLineSettings {
 	const base = Object.assign({}, DEFAULT_SETTINGS, raw);
 	if (raw?.style) {
-		base.style = Object.assign({}, DEFAULT_SETTINGS.style, raw.style);
+		const merged = Object.assign({}, DEFAULT_SETTINGS.style, raw.style);
+		base.style = {
+			textColor: merged.textColor?.trim() || DEFAULT_SETTINGS.style.textColor,
+			backgroundColor:
+				merged.backgroundColor?.trim() ||
+				DEFAULT_SETTINGS.style.backgroundColor,
+			fontWeight: merged.fontWeight ?? DEFAULT_SETTINGS.style.fontWeight,
+			textDecoration:
+				merged.textDecoration ?? DEFAULT_SETTINGS.style.textDecoration,
+			borderRadius: merged.borderRadius ?? DEFAULT_SETTINGS.style.borderRadius,
+			padding: merged.padding ?? DEFAULT_SETTINGS.style.padding,
+		};
 	}
 	base.customDate1 = mergeCustomField(
 		DEFAULT_SETTINGS.customDate1,
