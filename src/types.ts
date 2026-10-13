@@ -37,6 +37,13 @@ export interface DateStyleSettings {
 	padding: string;
 }
 
+/** Opgeslagen highlight-styling (zoals Shortag-presets). */
+export interface StylePresetSlot {
+	highlightDates: boolean;
+	style: DateStyleSettings;
+	savedAt?: number;
+}
+
 export interface DateLineSettings {
 	customDate1: CustomFormatField;
 	customDate2: CustomFormatField;
@@ -45,6 +52,7 @@ export interface DateLineSettings {
 	showCalendarIcon: boolean;
 	highlightDates: boolean;
 	style: DateStyleSettings;
+	stylePresets: (StylePresetSlot | null)[];
 	ignoreCodeblocks: boolean;
 	autoApplyEdits: boolean;
 	overrideFormatOnEdit: boolean;
